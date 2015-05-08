@@ -94,7 +94,7 @@ def capture_loop(positions, sss, visible, capture_kinematics, capture_image):
         nh = sss.move("arm", joint_pos)
         while nh.get_state() == 0:
             rospy.sleep(0.2)
-        if nh.get_state() != 3:
+        if nh.get_state() != 3:     # Take another look (doesn't seem to make sense)
             sss.move("torso", "home")
             nh = sss.move("arm", joint_pos)
             rospy.sleep(1)
@@ -102,7 +102,7 @@ def capture_loop(positions, sss, visible, capture_kinematics, capture_image):
                 continue
 
         print nh.get_state()
-        br.sendTransform((0, 0, 0.24),
+        br.sendTransform((0, 0, 0.24),      # Take another look (doesn't seem to make sense)
                          (0, 0, 0, 1),
                          rospy.Time.now(),
                          "/chessboard_center",
@@ -110,7 +110,8 @@ def capture_loop(positions, sss, visible, capture_kinematics, capture_image):
 
         sss.move("torso", [positions[index]['torso_position']])
         sss.sleep(1)
-
+        
+        # CONTINUE HERE
         visible_response = visible()
         if visible_response.every:
             print "All Checkerboards found"
