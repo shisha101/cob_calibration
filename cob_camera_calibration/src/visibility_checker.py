@@ -81,7 +81,7 @@ class VisibilityCheckerNode():
         self.bridge = CvBridge()
 
         # set up Checkerboard and CheckerboardDetector
-        self.board = Checkerboard((9, 6), 0.03)
+        self.board = Checkerboard((9, 6), 0.03)                 ### Take the parameters from the parameter server
         self.detector = CheckerboardDetector(self.board)
         rospy.init_node(NODE)
         self.counter = 0

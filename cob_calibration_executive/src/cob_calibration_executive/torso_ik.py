@@ -6,7 +6,7 @@ import numpy as np
 
 class TorsoIK():
     """TorsoIK estimates an ik solution for the Torso"""
-    def __init__(self, parameter_name='/torso_controller/joints'):
+    def __init__(self, parameter_name='/torso/joint_trajectory_controller/joints'):
         self.parameter_name = parameter_name
         self.joint_names = rospy.get_param(self.parameter_name)
         self.get_torso_configuration()

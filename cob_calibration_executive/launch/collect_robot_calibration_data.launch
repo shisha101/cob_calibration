@@ -8,6 +8,6 @@
   <include file="$(find cob_robot_calibration)/launch/collect_data.launch"/>
   <include file="$(find cob_camera_calibration)/launch/visibility_check.launch"/>
   <include file="$(find cob_image_capture)/launch/capture_all.launch"/>
-  <include file="$(find cob_calibration_executive)/launch/upload_params.launch"/>
+  <include file="$(find cob_calibration_executive)/launch/upload_params.launch"/>  <!-- ??? Not used due to lack of reference -->
   
 </launch>

@@ -72,8 +72,8 @@ from cob_camera_calibration import Checkerboard, CheckerboardDetector, cv2util
 from control_msgs.msg import JointTrajectoryControllerState
 
 import tf
-CHECKERBOARD_NAME = "cb_9x6"
-CHECKERBOARD_CHAIN = "arm_chain"
+CHECKERBOARD_NAME = "cb_9x6"            ### Should be read from an yaml file
+CHECKERBOARD_CHAIN = "arm_chain"        ### Should be read from an yaml file
 
 
 class DataCollector():
@@ -135,7 +135,7 @@ class DataCollector():
                 self._callback_image,
                 camera["name"])
             self._images[camera["name"]] = {}
-            self._images_received[camera["name"]] = True
+            self._images_received[camera["name"]] = True        ### Change to false
         print "==> done with initialization"
 
     def _callback_image(self, image_raw, id):
@@ -243,7 +243,7 @@ class DataCollector():
                 for name, v in self._transformations_received.iteritems():
                     if not v:
                         print "--> still waiting for sample from %s"%name
-            start_time = rospy.Time.now()
+            start_time = rospy.Time.now()                                       ### Should be inside the if?
         print "got sample"
         #latest_left = self._left
 

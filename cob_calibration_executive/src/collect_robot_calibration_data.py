@@ -94,7 +94,7 @@ def capture_loop(positions, sss, visible, capture_kinematics, capture_image):
         nh = sss.move("arm", joint_pos)
         while nh.get_state() == 0:
             rospy.sleep(0.2)
-        if nh.get_state() != 3:     # Take another look (doesn't seem to make sense)
+        if nh.get_state() != 3:     #??? Take another look (doesn't seem to make sense)
             sss.move("torso", "home")
             nh = sss.move("arm", joint_pos)
             rospy.sleep(1)
@@ -102,7 +102,7 @@ def capture_loop(positions, sss, visible, capture_kinematics, capture_image):
                 continue
 
         print nh.get_state()
-        br.sendTransform((0, 0, 0.24),      # Take another look (doesn't seem to make sense)
+        br.sendTransform((0, 0, 0.24),      #??? Take another look (doesn't seem to make sense)
                          (0, 0, 0, 1),
                          rospy.Time.now(),
                          "/chessboard_center",
@@ -115,13 +115,13 @@ def capture_loop(positions, sss, visible, capture_kinematics, capture_image):
         visible_response = visible()
         if visible_response.every:
             print "All Checkerboards found"
-            capture_kinematics()
-            capture_image()
+            capture_kinematics()                       ### Bool return value not handled    # Captures the joint values and image points
+            capture_image()                            # Saves the image
             print "--> captured 1 sample for camera calibration"
             print "--> captured 1 sample for kinematics calibration"
             counter_camera += 1
             counter_kinematics += 1
-        elif visible_response.master:
+        elif visible_response.master:               ### Doesn't make any sense
             print "Master Checkerboard found"
             capture_kinematics()
             print "--> captured 1 sample for kinematics calibration"
