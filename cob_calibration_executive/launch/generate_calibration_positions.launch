@@ -26,16 +26,13 @@
      
     <!--initialize move it and its services  -->
     <include file="$(find cob_moveit_config)/launch/move_group.launch"/>
+    
+    <!--initialize parameters and chessboard  -->
     <include file="$(find cob_calibration_executive)/launch/chessboard_position.launch"/>
     <include file="$(find cob_calibration_executive)/launch/upload_params.launch"/>
     
-   <!--
-    <include file="$(find cob_moveit_config)/launch/rviz.launch">
-        <arg name="robot" value="$(arg robot)"/>
-        <arg name="debug" value="$(arg debug)"/>
-        <arg name="config" value="true"/>
-    </include> 
-    -->
+    <!-- run Trial node to check the robot-->
+    <node type="Robot_Trial.py" pkg="cob_calibration_executive" name="$(anon Robot_Trial)" output="screen"></node>
     
     <!-- run stereo calibration of left and right camera ->
     <node type="generate_positions.py" pkg="cob_calibration_executive" name="$(anon generate_calibration_positions)" output="screen">

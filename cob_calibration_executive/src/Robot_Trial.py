@@ -37,7 +37,7 @@ def main():
     # angle calculation
     print "============ Generating plan 1"
     pose_target = geometry_msgs.msg.Pose()
-    pose_target.position.x = 0.712
+    pose_target.position.x = 10.712
     pose_target.position.y = 0.347
     pose_target.position.z = 1.159
     pose_target.orientation.x = 0.092
@@ -51,6 +51,12 @@ def main():
 #      group_variable_values[5] = 0.5
 #      group.set_joint_value_target(group_variable_values)
     plan1 = group.plan()
+    print plan1
+    if plan1.joint_trajectory.frame_id:
+        print "A solution has been found"
+    else:
+        print "No solutuin was found"
+    print (plan1)
     rospy.sleep(5)
     print "============ executing Path"
     group.go(wait=True)
