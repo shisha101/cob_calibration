@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 PKG = 'cob_calibration_executive'
-NODE = 'Robot Test node'
+NODE = 'robot_test_node'
 import sys
 import copy
-import rospy
+import rospy #done
 import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
 from std_msgs.msg import String
 
+import pdb # debugger
 def main():
     rospy.init_node(NODE)
     print "==> %s started " % NODE
@@ -19,6 +20,7 @@ def main():
     print "============ Robot Groups:"
     print robot.get_group_names()
     print "============"
+    pdb.set_trace()
     group = moveit_commander.MoveGroupCommander("arm_left") # Rename the group
     ## robot.
     print "============ Printing robot state"
@@ -37,26 +39,28 @@ def main():
     # angle calculation
     print "============ Generating plan 1"
     pose_target = geometry_msgs.msg.Pose()
-    pose_target.position.x = 10.712
-    pose_target.position.y = 0.347
-    pose_target.position.z = 1.159
-    pose_target.orientation.x = 0.092
-    pose_target.orientation.y = -0.0619
-    pose_target.orientation.z = -0.550
-    pose_target.orientation.w = 0.827
+    pose_target.position.x = 0.65102#0.71#0.712
+    pose_target.position.y = 0.308548#0.468#0.347
+    pose_target.position.z = 0.636698#1.11#1.159
+    pose_target.orientation.x = 0.215224#0.339#0.092
+    pose_target.orientation.y = 0.2958#-0.3552#-0.0619
+    pose_target.orientation.z = -0.608066#0.618#-0.550
+    pose_target.orientation.w = 0.704583#0.613#0.827
     group.set_pose_target(pose_target)
     group.set_start_state_to_current_state()
+#   group.set_start_state(msg)
 #     #angle calculation
 #      group_variable_values = group.get_current_joint_values()
 #      group_variable_values[5] = 0.5
 #      group.set_joint_value_target(group_variable_values)
     plan1 = group.plan()
     print plan1
-    if plan1.joint_trajectory.frame_id:
-        print "A solution has been found"
+    pdb.set_trace()
+    if plan1.joint_trajectory.header.frame_id:
+        print "\033[1;32mA solution has been found\033[1;m"
     else:
-        print "No solutuin was found"
-    print (plan1)
+        print "\033[1;31mNo solutuin was found\033[1;m"
+#     print (plan1)
     rospy.sleep(5)
     print "============ executing Path"
     group.go(wait=True)

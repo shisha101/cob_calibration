@@ -54,28 +54,26 @@
 #
 #################################################################
 PKG = 'cob_calibration_executive'
-NODE = 'collect_robot_calibration_data_node'
+NODE = 'generate_robot_calibration_data_node'
 import roslib
 roslib.load_manifest(PKG)
 import rospy
-
-
-from kinematics_msgs.srv import GetPositionIK, GetPositionIKRequest
-from geometry_msgs.msg import PoseStamped
-from control_msgs.msg import JointTrajectoryControllerState
-from moveit_msgs.msg import PositionIKRequest
-from moveit_msgs.srv import GetPositionIK as GetPositionIKMoveit
-
+import sys
+import copy
+import moveit_commander
+import moveit_msgs.msg
+import geometry_msgs.msg
+from std_msgs.msg import String
 import tf
 import numpy as np
 import yaml
 import os
 import math
-from cob_calibration_executive.torso_ik import TorsoIK
-
 from simple_script_server import simple_script_server
-
 from random import shuffle  #shuffle links to look at
+# from cob_calibration_executive.torso_ik import TorsoIK
+
+import pdb # debugger
 
 #board       = Checkerboard(self.pattern_size, self.square_size)
 #checkerboard_detector=CheckerboardDetector()
@@ -209,44 +207,55 @@ def get_position(listener, tip):
 def main():
     rospy.init_node(NODE)
     print "==> %s started " % NODE
-
-    chessboard_pose = rospy.Publisher('/cob_calibration/chessboard_pose', PoseStamped, queue_size=1)
+    rospy.wait_for_service("/move_group/plan_execution/set_parameters",timeout=30.0)
+    chessboard_pose = rospy.Publisher('/cob_calibration/chessboard_pose', geometry_msgs.msg.PoseStamped, queue_size=1)
     print 'chessboard_pose publisher activated'
+    moveit_commander.roscpp_initialize(sys.argv) # init of moveit
+    robot = moveit_commander.RobotCommander()# init of moveit wrt robot
+#     scene = moveit_commander.PlanningSceneInterface() # init if scene if collisiton is to be avoided and for the addition of the cb pattern later
+    print "============ Robot Groups:"
+    print robot.get_group_names()
+    print "============"
     listener = tf.TransformListener()
     rospy.sleep(1.5)
-    arm_ik = rospy.ServiceProxy('/compute_ik', GetPositionIKMoveit)
-    torso_ik = rospy.ServiceProxy('/lookat_get_ik', GetPositionIK)
-    '''
-    (t,r)=listener.lookupTransform('/arm_0_link','arm_7_link',rospy.Time(0))
+    arm_left_group = moveit_commander.MoveGroupCommander("arm_left") # define groups
+    arm_right_group = moveit_commander.MoveGroupCommander("arm_right")
+    arm_left_group.set_pose_reference_frame('torso_3_link')
+    arm_right_group.set_pose_reference_frame('torso_3_link')
+#     torso_ik = rospy.ServiceProxy('/lookat_get_ik', GetPositionIK) # no Torso link
 
-    a=calculate_ik((t,r), arm_ik)
-    print a[0]
-    '''
+#     # init
+#     print "--> initializing sss"
+#     sss = simple_script_server()
+#     sss.init("base")
+#     sss.init("torso")
+#     sss.init("head")
+#     sss.recover("base")
+#     sss.recover("torso")
+#     sss.recover("head")
+#     print "--> components initialized"
+    camera_link_left = "/torso_cam3d_left_link" #renamed
+    camera_link_right = "/torso_cam3d_right_link" #new addition
 
-    # init
-    print "--> initializing sss"
-    sss = simple_script_server()
-    sss.init("base")
-    sss.init("torso")
-    sss.init("head")
-    sss.recover("base")
-    sss.recover("torso")
-    sss.recover("head")
-    print "--> components initialized"
-    camera_link = "/torso_cam3d_left_link"
-
-    [xhead, yhead, zhead] = get_position(listener, camera_link)[0]
+    [xhead, yhead, zhead] = get_position(listener, camera_link_left)[0]
+    print "Positon wrt torso_cam3d_left"
+    print xhead, yhead, zhead
+    
+    [xhead, yhead, zhead] = get_position(listener, camera_link_right)[0]
+    print "Positon wrt torso_cam3d_left"
     print xhead, yhead, zhead
 
     print "--> setup care-o-bot for capture"
     #sss.move("head", "back")
 
-    calibration_seed = rospy.get_param("/script_server/arm/calibration")
+    calibration_seed = rospy.get_param("/script_server/arm/calibration") # this should no longer be needed
 
     #sss.move("arm",[a[0]])
-    nextPose = PoseStamped()
+    next_pose = geometry_msgs.msg.PoseStamped()  #init of the geometry_msgs pose
+    current_pose_left = arm_left_group.get_current_pose()
+    current_pose_right = arm_right_group.get_current_pose()
 
-    torso = TorsoIK()
+#     torso = TorsoIK()
 
     # define cuboid for positions
     # limits from base_link frame
@@ -271,8 +280,9 @@ def main():
         while sample_positions[key][-1] + step <= (limits[key][1] + 0.01):
             sample_positions[key].append(sample_positions[key][-1] + step)
 
-    joint_states = []
-    torso.get_torso_limits()
+    joint_states_left = []
+    joint_states_right= []
+#     torso.get_torso_limits() #limits should have alerady been loaded in the launch files
 
     cb_links = ["/chessboard_center","/chessboard_lu_corner",
                 "/chessboard_ru_corner", "/chessboard_ll_corner",
@@ -284,18 +294,18 @@ def main():
                 #for q in quaternion:
                 for cb_link in cb_links:
                     print "\033[1;34mNew Position\033[1;m"
-                    nextPose.header.frame_id = '/torso_3_link'
-                    nextPose.pose.position.x = x
-                    nextPose.pose.position.y = y
-                    nextPose.pose.position.z = z
+                    next_pose.header.frame_id = '/torso_3_link' ## BASE LINK ??
+                    next_pose.pose.position.x = x
+                    next_pose.pose.position.y = y
+                    next_pose.pose.position.z = z
 
                     # (0,0,0,1) for cob3-6
-                    nextPose.pose.orientation.x = 0
-                    nextPose.pose.orientation.y = 0
-                    nextPose.pose.orientation.z = 0
-                    nextPose.pose.orientation.w = 1
+                    next_pose.pose.orientation.x = 0
+                    next_pose.pose.orientation.y = 0
+                    next_pose.pose.orientation.z = 0
+                    next_pose.pose.orientation.w = 1
 
-                    chessboard_pose.publish(nextPose)
+                    chessboard_pose.publish(next_pose)  # is this publish still needed ??
                     rospy.sleep(0.2)
                     transformation_base_cb = get_position(
                         listener, '/chessboard_center')
@@ -314,50 +324,51 @@ def main():
 
                     q = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
                     #print q
-                    nextPose.pose.orientation.x = q[0]
-                    nextPose.pose.orientation.y = q[1]
-                    nextPose.pose.orientation.z = q[2]
-                    nextPose.pose.orientation.w = q[3]
-                    chessboard_pose.publish(nextPose)
+                    next_pose.pose.orientation.x = q[0]
+                    next_pose.pose.orientation.y = q[1]
+                    next_pose.pose.orientation.z = q[2]
+                    next_pose.pose.orientation.w = q[3]
+                    chessboard_pose.publish(next_pose)
                     rospy.sleep(0.2)
                     transformation_base_cb = get_position(
                         listener, cb_link)
+                #Set starting pose for trajectory
+                arm_left_group.set_start_state(current_pose_left)
+                arm_right_group.set_start_state(current_pose_right)
+                #Set end pose for trajectory
+                arm_left_group.set_pose_target(next_pose.pose)
+                arm_right_group.set_pose_target(next_pose.pose)
+                #Plant paths for groups
+                path_left = arm_left_group.plan()
+                path_right = arm_right_group.plan()
+                if path_left.joint_trajectory.header.frame_id: # check if planning succeeded
+                    print "\033[1;32mA solution for left has been found\033[1;m"
+                    #update next iterations starting pose
+                    current_pose_left = next_pose
+                    joint_states_left.append('\njoint_position: \n')
+                    joint_states_left.append(path_left.joint_trajectory.points[-1].positions) # append the attainable pose to the list then YAML 
+                else:
+                    print "\033[1;31mNo solutuin for left was found\033[1;m"
+                if path_right.joint_trajectory.header.frame_id:# check if planning succeeded
+                    print "\033[1;32mA solution for right has been found\033[1;m"
+                    current_pose_right = next_pose
+                    joint_states_right.append('\njoint_position: \n')
+                    joint_states_right.append(path_right.joint_trajectory.points[-1].positions) # append the attainable pose to the list then YAML 
+                else:
+                    print "\033[1;31mNo solutuin for right was found\033[1;m"
 
+    file_path = rospy.get_param('~output_path', None)
+    directory = os.path.dirname(file_path)
 
-                    #if not torso.in_range(angles):
-                        #continue
-                    #print t
-                    #try:
-                        #torso_js = lookat(transformation_base_cb ,torso_ik)[:len(torso.limits)]
-                    #except:
-                        #break
-
-                    #if torso_js[0] is None:
-                        #break
-                    #if not torso.valid_ik(torso_js):
-                        #break
-                    #print '\033[1;33mTorso solution found\033[1;m'
-
-
-                    #(t, r) = get_cb_pose(listener, '/head_cam3d_link')
-
-                    (t, r) = get_cb_pose(listener, '/torso_3_link')
-                    js = calculate_ik((t, r), arm_ik, calibration_seed[0])
-                    if js[0] is not None:
-                        joint_states.append({'joint_position': js[0]})
-                        print joint_states[-1]
-
-                        print '\033[1;32mIK solution found\033[1;m'
-                    else:
-                        print '\033[1;31mNo solution found\033[1;m'
-
-    path = rospy.get_param('~output_path', None)
-    directory = os.path.dirname(path)
-
-    if path is not None:
+    if file_path is not None:
         if not os.path.exists(directory):
             os.makedirs(directory)
-        with open(path, 'w') as f:
+        file_path_left = file_path+"calibration_positions_left.yaml"
+        file_path_right = file_path+"calibration_positions_right.yaml"
+        with open(file_path_left, 'w') as f:
+            f.write('# autogenerated: Do not edit #\n')
+            f.write(yaml.dump(joint_states))
+        with open(file_path_right, 'w') as f:
             f.write('# autogenerated: Do not edit #\n')
             f.write(yaml.dump(joint_states))
     else:
