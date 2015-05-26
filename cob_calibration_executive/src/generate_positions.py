@@ -55,6 +55,8 @@
 #################################################################
 PKG = 'cob_calibration_executive'
 NODE = 'generate_robot_calibration_data_node'
+""" The strings here regarding group names should be accounted for later.
+The number of groups should be dynamic"""
 import roslib
 roslib.load_manifest(PKG)
 import rospy
@@ -223,17 +225,17 @@ def main():
     arm_left_group.set_pose_reference_frame('torso_3_link')
     arm_right_group.set_pose_reference_frame('torso_3_link')
 #     torso_ik = rospy.ServiceProxy('/lookat_get_ik', GetPositionIK) # no Torso link
-
-#     # init
-#     print "--> initializing sss"
-#     sss = simple_script_server()
-#     sss.init("base")
-#     sss.init("torso")
-#     sss.init("head")
-#     sss.recover("base")
-#     sss.recover("torso")
-#     sss.recover("head")
-#     print "--> components initialized"
+    pdb.set_trace()
+    # init
+    print "--> initializing sss"
+    sss = simple_script_server()
+    sss.init("base")
+    sss.init("torso")
+    sss.init("head")
+    sss.recover("base")
+    sss.recover("torso")
+    sss.recover("head")
+    print "--> components initialized"
     camera_link_left = "/torso_cam3d_left_link" #renamed
     camera_link_right = "/torso_cam3d_right_link" #new addition
 
@@ -252,20 +254,35 @@ def main():
 
     #sss.move("arm",[a[0]])
     next_pose = geometry_msgs.msg.PoseStamped()  #init of the geometry_msgs pose
-    current_pose_left = arm_left_group.get_current_pose()
-    current_pose_right = arm_right_group.get_current_pose()
-
+    current_pose_left = arm_left_group.get_current_joint_values()
+    current_pose_right = arm_right_group.get_current_joint_values()
+    # making a state message and filling it
+    arm_left_state = moveit_msgs.msg.RobotState()
+    arm_left_state.joint_state.name = arm_left_group.get_joints()
+    arm_right_state = moveit_msgs.msg.RobotState()
+    arm_right_state.joint_state.name = arm_right_group.get_joints()
+    arm_left_state.joint_state.position = current_pose_left
+    arm_right_state.joint_state.position = current_pose_right
+    # Debugging
+#     ref_frame_left = arm_right_group.get_pose_reference_frame()
+#     ref_frame_right = arm_left_group.get_pose_reference_frame()
+#     pdb.set_trace()
+    
 #     torso = TorsoIK()
 
     # define cuboid for positions
-    # limits from base_link frame
-    limits = {'x': (-0.4, -1.0),
-              'y': (-0.3, 0.3),
-              'z': (0.5, 1.5)}
+    # limits from base_link frame Old values
+#     limits = {'x': (-0.4, -1.0),
+#               'y': (-0.3, 0.3),
+#               'z': (0.5, 1.5)}
+    #New values
+    limits = {'x': (0.57567, 0.34636),
+              'y': (-0.021282,  0.542),
+              'z': (0.62907-0.485,  1.1114-0.485)}
 
     sample_density = {'x': 6,
                       'y': 6,
-                      'z': 6}
+                      'z': 6}#originally 6
 
     sample_positions = {'x': [],
                         'y': [],
@@ -282,6 +299,8 @@ def main():
 
     joint_states_left = []
     joint_states_right= []
+    joint_trajectory_left = []
+    joint_trajectory_right = []
 #     torso.get_torso_limits() #limits should have alerady been loaded in the launch files
 
     cb_links = ["/chessboard_center","/chessboard_lu_corner",
@@ -322,8 +341,13 @@ def main():
                     pitch = np.random.normal(pitch,std_dev,1)[0]
                     yaw = np.random.normal(yaw,std_dev,1)[0]
 
-                    q = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
+#                     q = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
                     #print q
+#                     next_pose.pose.orientation.x = q[0]
+#                     next_pose.pose.orientation.y = q[1]
+#                     next_pose.pose.orientation.z = q[2]
+#                     next_pose.pose.orientation.w = q[3]
+                    q = [0.0049228, 0.01897, -0.70297, 0.71095]
                     next_pose.pose.orientation.x = q[0]
                     next_pose.pose.orientation.y = q[1]
                     next_pose.pose.orientation.z = q[2]
@@ -332,9 +356,14 @@ def main():
                     rospy.sleep(0.2)
                     transformation_base_cb = get_position(
                         listener, cb_link)
-                #Set starting pose for trajectory
-                arm_left_group.set_start_state(current_pose_left)
-                arm_right_group.set_start_state(current_pose_right)
+                #Set starting pose for trajectory to continue planning from the last achieved point 
+#                 arm_left_group.set_start_state(current_pose_left) # not compatible since the pose is not a state check arm_left_state and right
+#                 arm_right_group.set_start_state(current_pose_right)
+#                 pdb.set_trace()
+                arm_left_state.joint_state.position = current_pose_left
+                arm_right_state.joint_state.position = current_pose_right
+                arm_left_group.set_start_state(arm_left_state)
+                arm_right_group.set_start_state(arm_right_state)
                 #Set end pose for trajectory
                 arm_left_group.set_pose_target(next_pose.pose)
                 arm_right_group.set_pose_target(next_pose.pose)
@@ -344,16 +373,22 @@ def main():
                 if path_left.joint_trajectory.header.frame_id: # check if planning succeeded
                     print "\033[1;32mA solution for left has been found\033[1;m"
                     #update next iterations starting pose
-                    current_pose_left = next_pose
-                    joint_states_left.append('\njoint_position: \n')
-                    joint_states_left.append(path_left.joint_trajectory.points[-1].positions) # append the attainable pose to the list then YAML 
+#                     pdb.set_trace()
+                    arm_left_group.go()
+                    joint_trajectory_left.append(path_left)
+                    current_pose_left = path_left.joint_trajectory.points[-1].positions
+#                     joint_states_left.append(str('\njoint_position: \n'))
+                    joint_states_left.append({'joint_position': path_left.joint_trajectory.points[-1].positions}) # append the attainable pose to the list then YAML 
                 else:
                     print "\033[1;31mNo solutuin for left was found\033[1;m"
                 if path_right.joint_trajectory.header.frame_id:# check if planning succeeded
                     print "\033[1;32mA solution for right has been found\033[1;m"
-                    current_pose_right = next_pose
-                    joint_states_right.append('\njoint_position: \n')
-                    joint_states_right.append(path_right.joint_trajectory.points[-1].positions) # append the attainable pose to the list then YAML 
+#                     pdb.set_trace()
+                    arm_right_group.go()
+                    joint_trajectory_right.append(path_right)
+                    current_pose_right = path_right.joint_trajectory.points[-1].positions
+#                     joint_states_right.append('\njoint_position: \n')
+                    joint_states_right.append({'joint_position': path_right.joint_trajectory.points[-1].positions}) # append the attainable pose to the list then YAML 
                 else:
                     print "\033[1;31mNo solutuin for right was found\033[1;m"
 
@@ -363,18 +398,27 @@ def main():
     if file_path is not None:
         if not os.path.exists(directory):
             os.makedirs(directory)
-        file_path_left = file_path+"calibration_positions_left.yaml"
-        file_path_right = file_path+"calibration_positions_right.yaml"
-        with open(file_path_left, 'w') as f:
+        file_path_joint_angles_left = file_path+"calibration_positions_left.yaml"
+        file_path_joint_angles_right = file_path+"calibration_positions_right.yaml"
+        with open(file_path_joint_angles_left, 'w') as f:
             f.write('# autogenerated: Do not edit #\n')
-            f.write(yaml.dump(joint_states))
-        with open(file_path_right, 'w') as f:
+            f.write(yaml.dump(joint_states_left))
+        with open(file_path_joint_angles_right, 'w') as f:
             f.write('# autogenerated: Do not edit #\n')
-            f.write(yaml.dump(joint_states))
-    else:
-        print yaml.dump(joint_states)
-    print '%s ik solutions found' % len(joint_states)
-
+            f.write(yaml.dump(joint_states_right))
+        file_path_joint_trajectory_left = file_path+"calibration_trajectory_left.yaml"
+        file_path_joint_trajectory_right = file_path+"calibration_trajectory_right.yaml"
+        with open(file_path_joint_trajectory_left, 'w') as f:
+            f.write('# autogenerated: Do not edit #\n')
+            f.write(yaml.dump(joint_trajectory_left))
+        with open(file_path_joint_trajectory_right, 'w') as f:
+            f.write('# autogenerated: Do not edit #\n')
+            f.write(yaml.dump(joint_trajectory_right))
+        
+#     else:
+#         print yaml.dump(joint_states)
+    print '%s ik solutions found for left arm' % len(joint_states_left)
+    print '%s ik solutions found for right arm' % len(joint_states_right)
 
 def calculate_angles(t):
     '''
