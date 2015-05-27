@@ -53,11 +53,16 @@
 # If not, see <http://www.gnu.org/licenses/>.
 #
 #################################################################
+'''
+@summary: This function does not check for the detection of the CB pattern, it 
+does however iterate throught the positions and captures images from all the
+ defined cameras and saves them to the hard drive as jpegs
+'''
 PKG  = 'cob_calibration_executive'
 NODE = 'collect_stereo_data_node'
 import roslib; roslib.load_manifest(PKG)
 import rospy
-
+import pdb # debugger
 from simple_script_server import simple_script_server
 from cob_calibration_msgs.srv import Capture
 
@@ -68,7 +73,7 @@ def main():
     # service client
     image_capture_service_name = "/image_capture/capture"
     capture = rospy.ServiceProxy(image_capture_service_name, Capture)
-    rospy.wait_for_service(image_capture_service_name, 1)
+    rospy.wait_for_service(image_capture_service_name, 10)
     print "--> service client for capture images initialized"
 
     # init
@@ -84,7 +89,7 @@ def main():
     print "--> setup care-o-bot for capture"
     sss.move("head", "back")
     sss.move("torso", "home")
-
+    pdb.set_trace()
     print "==> capturing images"
     positions = rospy.get_param("/script_server/arm/all_intrinsic")
     for pos in positions:

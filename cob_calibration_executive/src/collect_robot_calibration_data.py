@@ -145,7 +145,7 @@ def main():
     rospy.wait_for_service(checkerboard_checker_name, 6)
     print "--> service client for for checking for chessboards initialized"
 
-    kinematics_capture_service_name = "/collect_data/capture"
+    kinematics_capture_service_name = "/collect_data/capture" # note the use of the collect_data and NOT image_capture
     capture_kinematics = rospy.ServiceProxy(
         kinematics_capture_service_name, Capture)
     rospy.wait_for_service(kinematics_capture_service_name, 6)

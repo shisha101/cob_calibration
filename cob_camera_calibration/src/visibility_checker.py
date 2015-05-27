@@ -101,7 +101,7 @@ class VisibilityCheckerNode():
         self.image = []
         self.image_received = [False] * self.numCams
         for id in range(self.numCams):
-            self.image.append(Image())
+            self.image.append(Image())  # wait for a message from each camera this ensures that all cameras are working
 
         # Subscribe to images
         self.imageSub = []
@@ -137,7 +137,7 @@ class VisibilityCheckerNode():
         @return: CaptureResponse() message
         '''
         self.image_received = [False] * self.numCams
-        visible = []
+        visible = []# this list contians the boolean information concerning the detection of a CB pattern in each image
         while not all(self.image_received):
             print "waiting for images"
             rospy.sleep(1)

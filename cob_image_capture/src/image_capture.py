@@ -53,6 +53,12 @@
 # If not, see <http://www.gnu.org/licenses/>.
 #
 #################################################################
+'''
+@summary: This function does not check for the detection of the CB pattern, it 
+does however provides the service to capture images froma all cameras and save 
+them to the HDD
+'''
+
 PKG = 'cob_image_capture'
 NODE = 'image_capture'
 import roslib
@@ -83,7 +89,7 @@ class ImageCaptureNode():
         self.counter = 0
 
         # Get params from ros parameter server or use default
-        self.cams = rospy.get_param("~cameras")
+        self.cams = rospy.get_param("~cameras") # defined in a user defined yaml file (change later)
         self.numCams = int(rospy.get_param("~number_of_cameras", "1"))
         self.output_folder = rospy.get_param("~output_folder", "/tmp")
         self.save_header_stamp = rospy.get_param("~save_header_stamp", "False")
@@ -108,11 +114,12 @@ class ImageCaptureNode():
         self.imageSub = []
         for id in range(self.numCams):
             self.imageSub.append(rospy.Subscriber(
-                self.camera[id], Image, self._imageCallback, id))
+                self.camera[id], Image, self._imageCallback, id)) # this is a permanent subscription to the streams of images
+                                                                  #    is this really needed or should we just subscribe get the image then unsubscribe
 
         # Wait for image messages
         for id in range(self.numCams):
-            rospy.wait_for_message(self.camera[id], Image, 5)
+            rospy.wait_for_message(self.camera[id], Image, 5) # wait for a message from each camera this ensures that all cameras are working
 
         # Report
         rospy.loginfo("started capture process...")
@@ -174,7 +181,7 @@ class ImageCaptureNode():
         # grab image messages
         localImages = []
         for id in range(self.numCams):
-            if self.image[id].header.stamp > rospy.Time(0):
+            if self.image[id].header.stamp > rospy.Time(0): # this condition needs revison but makes sure that the frames being captured are fresh
                 localImages.append(self.image[id])
                 rospy.loginfo("   header.stamp of cam %d: %s" %
                               (id, str(self.image[id].header.stamp)))

@@ -432,8 +432,8 @@ def main():
               [[0.57567,-0.021282,0.62907-0.485],[0.34636,0.542,1.1114-0.485]],
               [[0.57567,-0.021282,0.62907-0.485],[0.34636,-0.542,1.1114-0.485]]
               ]
-    discritization = [[3,2,2],
-                      [3,2,2]]
+    discritization = [[6,6,6],
+                      [6,6,6]]
     Trajectory_Joint_angles = [] # the first element of each entry is the Trajectory list for all successful calibration points while the second is the list of finla joint angles corresponding to that list
     
     file_path = rospy.get_param('~output_path', None)

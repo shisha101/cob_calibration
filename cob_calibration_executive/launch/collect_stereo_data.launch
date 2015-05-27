@@ -3,7 +3,8 @@
 
 	<!-- upload params -->
 	<include file="$(find cob_calibration_executive)/launch/upload_params.launch"/>
-	
+	<!-- note that this is does not launch the capture service node therefore it has been added here-->
+	<include file="$(find cob_image_capture)/launch/capture_all.launch"/>
 	<!-- node that collects stereo data -->
 	<node type="collect_stereo_data.py" pkg="cob_calibration_executive" name="$(anon collect_stereo_data)" output="screen" />
 
