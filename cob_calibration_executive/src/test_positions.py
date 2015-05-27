@@ -73,6 +73,7 @@ def capture_loop(trajectories, sss):
     '''
     Moves arm to all trajectories using moveit commander
     and calls capture() to capture samples
+    @deprecated: This function is currently no longer being used in test_positions.py
     '''
     br = tf.TransformBroadcaster()
     for index in range(len(trajectories)):
@@ -123,7 +124,6 @@ def trajectory_test_loop (group):
         group.execute(trajectory_of_group[i])
         print "Progress of current group is %s out of %s" %(i, len(trajectory_of_group))
     print "%s has finished testing it's trajectories" %group.get_name()
-    pdb.set_trace()
     
 
 def main():
@@ -156,23 +156,20 @@ def main():
     sss.move("arm_left","home") #move to home position
     sss.move("arm_right","home")#move to home position
     sss.move("head", "back")    #move to calibration position
-#     pdb.set_trace()
     rospy.wait_for_service("/move_group/plan_execution/set_parameters",timeout=30.0)
     moveit_commander.roscpp_initialize(sys.argv) # init of moveit
     robot = moveit_commander.RobotCommander()# init of moveit wrt robot
     arm_left_group = moveit_commander.MoveGroupCommander("arm_left") # define groups
     arm_right_group = moveit_commander.MoveGroupCommander("arm_right")
-#     pdb.set_trace()
     arm_left_group.set_pose_reference_frame('torso_3_link')#*** Set referece
     arm_right_group.set_pose_reference_frame('torso_3_link')#*** Set referece
     arm_list = [arm_left_group,arm_right_group] # list of groups for which we want to test the trajectories used for calibration
     #scene = moveit_commander.PlanningSceneInterface() # init if scene if collisiton is to be avoided and for the addition of the cb pattern later
     print "--> setup care-o-bot for capture"
-    pdb.set_trace()
     start = rospy.Time.now()
     for i in xrange(len(arm_list)):
-#         pdb.set_trace()
         trajectory_test_loop(arm_list[i])
+        sss.move(arm_list[i].get_name(),"home")
     print "finished after %s seconds" % (rospy.Time.now() - start).to_sec()
     sss.move("arm_left","home") #move to home position
     sss.move("arm_right","home")#move to home position
