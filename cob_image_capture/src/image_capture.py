@@ -55,7 +55,7 @@
 #################################################################
 '''
 @summary: This function does not check for the detection of the CB pattern, it 
-does however provides the service to capture images froma all cameras and save 
+does however provides the service to capture images from all cameras and save 
 them to the HDD
 '''
 

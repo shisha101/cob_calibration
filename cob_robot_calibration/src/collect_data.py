@@ -102,7 +102,7 @@ class DataCollector():
         with open(rospy.get_param("~sensors_yaml"), 'r') as a:
             sensors_yaml = yaml.load(a.read())
         # self._get_transformation_links(sensors_yaml)
-        self._create_transformation_callbacks(sensors_yaml)
+        self._create_transformation_callbacks(sensors_yaml) # have a look at this
         #self.listener = tf.TransformListener()
 
        # CvBridge
@@ -112,7 +112,7 @@ class DataCollector():
         self._images = {}
         self._images_received = {}
 
-        self.counter = 1
+        self.counter = 1 # Why is this one and not zero ?
 
         #  init publisher / subscriber
         self._robot_measurement_pub = rospy.Publisher(
@@ -300,7 +300,7 @@ class DataCollector():
         #----------------------
         robot_msg.M_chain = self.transformations.values()
 
-        self._robot_measurement_pub.publish(robot_msg)
+        self._robot_measurement_pub.publish(robot_msg) # this data is saved to a bag file for later use
 
         return True
 
