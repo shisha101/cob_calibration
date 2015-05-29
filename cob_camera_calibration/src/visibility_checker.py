@@ -64,6 +64,7 @@ from sensor_msgs.msg import Image
 from cob_calibration_msgs.srv import *
 from cv_bridge import CvBridge, CvBridgeError
 
+import pdb
 
 class VisibilityCheckerNode():
     '''
@@ -111,6 +112,8 @@ class VisibilityCheckerNode():
 
         # Wait for image messages
         for id in range(self.numCams):
+            print "now checking for incoming frames on the %s topic" %self.camera[id]
+#             pdb.set_trace()
             rospy.wait_for_message(self.camera[id], Image, 5)
 
     def _imageCallback(self, data, id):
@@ -138,6 +141,7 @@ class VisibilityCheckerNode():
         '''
         self.image_received = [False] * self.numCams
         visible = []# this list contians the boolean information concerning the detection of a CB pattern in each image
+        visible_cam_id = []
         while not all(self.image_received):
             print "waiting for images"
             rospy.sleep(1)
@@ -152,15 +156,18 @@ class VisibilityCheckerNode():
             try:
                 self.detector.detect_image_points( img_raw, False, True)
                 visible.append(True)
+                visible_cam_id.append(self.camera[id])
             except self.detector.NoPatternFoundException:
                 rospy.logwarn("No cb found")
                 visible.append(False)
+                visible_cam_id.append(self.camera[id])
             # grab image messages
         #print '%s checkerboards found --> return %s'%(sum(visible),all(visible))
         response = VisibleResponse()
         response.every = False
         response.master = False
-
+        response.visibleImages = visible
+        response.cameraTopicID = visible_cam_id
         if all(visible):
             response.every = True
             response.master = True

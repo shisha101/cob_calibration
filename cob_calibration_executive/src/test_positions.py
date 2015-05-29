@@ -114,7 +114,7 @@ def trajectory_test_loop (group):
     # get position from parameter server
     trajectory_path_root = rospy.get_param('trajectory_path_root', None)
     trajectory_path_of_group = trajectory_path_root+group.get_name()+"calibration_trajectories.yaml" #this is how the name is saved in generate_positions.py
-    if trajectory_path_of_group is None:
+    if trajectory_path_root is None:
         print "[ERROR]: no trajectory for %s set" %group.get_name()
         return
     with open(trajectory_path_of_group, 'r') as f:

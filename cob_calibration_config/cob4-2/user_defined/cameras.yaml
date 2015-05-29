@@ -8,14 +8,14 @@ reference:
 
 further:
        -        name: torso_cam3d_right
-                topic: /torso_cam3d_right/image_raw
+                topic: /torso_cam3d_right/rgb/image_raw
                 file_prefix: right_kinect
                 calibration_data_file: right.yaml #this might not be right
                 frame_id: /torso_cam3d_right_link
                 property: cam_r_
                 is_part_of_stereo_system: False
        -        name: torso_cam3d_down
-                topic: /torso_cam3d_down/image_raw
+                topic: /torso_cam3d_down/rgb/image_raw
                 file_prefix: down_kinect
                 calibration_data_file: kinect_rgb.yaml #this might not be right
                 frame_id: /torso_cam3d_down_link
