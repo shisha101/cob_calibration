@@ -148,11 +148,10 @@ def data_capture_loop(group,visible,capture_kinematics,capture_image):
     @type group: moveit_commander.MoveGroupCommander
     @param visible: this is the the service used to check if the CB has been detected
     @param capture_image: this is the the service used to save images
-    @param capture_kinematics: this is the the service used to save kinematics
+    @param capture_kinematics: this is the the service used to save kinematics and image 
     '''
     # get position from parameter server
     trajectory_path_root = rospy.get_param('~trajectory_path_root', None)
-    pdb.set_trace()
     trajectory_path_of_group = trajectory_path_root+group.get_name()+"calibration_trajectories.yaml" #this is how the name is saved in generate_positions.py
     if trajectory_path_root is None:
         print "[ERROR]: no trajectory for %s set" %group.get_name()
@@ -173,6 +172,7 @@ def data_capture_loop(group,visible,capture_kinematics,capture_image):
         print "Progress of current group is %s out of %s" %(i, len(trajectory_of_group))
         visible_response = visible()
         pdb.set_trace()
+        print "visibility check has finished"
         if visible_response.every:
             print "All Checkerboards found"
             capture_kinematics()                       ### Bool return value not handled    # Captures the joint values and image points

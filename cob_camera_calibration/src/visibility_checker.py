@@ -150,11 +150,11 @@ class VisibilityCheckerNode():
         self.images_received = [False] * self.numCams
         for id in range(self.numCams):
             image = self.image[id]
-
-            cvImage = self.bridge.imgmsg_to_cv(image, 'rgb8')
-            img_raw = cv2util.cvmat2np(cvImage)
+            cvImage = self.bridge.imgmsg_to_cv2(image, 'rgb8') # changed from imgmsg_to_cv to cv2 (update)
+            pdb.set_trace()
+#             img_raw = cv2util.cvmat2np(cvImage)
             try:
-                self.detector.detect_image_points( img_raw, False, True)
+                self.detector.detect_image_points(cvImage, False, True)
                 visible.append(True)
                 visible_cam_id.append(self.camera[id])
             except self.detector.NoPatternFoundException:
