@@ -151,7 +151,7 @@ class VisibilityCheckerNode():
         for id in range(self.numCams):
             image = self.image[id]
             cvImage = self.bridge.imgmsg_to_cv2(image, 'rgb8') # changed from imgmsg_to_cv to cv2 (update)
-            pdb.set_trace()
+
 #             img_raw = cv2util.cvmat2np(cvImage)
             try:
                 self.detector.detect_image_points(cvImage, False, True)
@@ -164,6 +164,7 @@ class VisibilityCheckerNode():
             # grab image messages
         #print '%s checkerboards found --> return %s'%(sum(visible),all(visible))
         response = VisibleResponse()
+        pdb.set_trace()
         response.every = False
         response.master = False
         response.visibleImages = visible

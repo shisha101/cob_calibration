@@ -171,7 +171,7 @@ def data_capture_loop(group,visible,capture_kinematics,capture_image):
         progress_pub.publish(msg)
         print "Progress of current group is %s out of %s" %(i, len(trajectory_of_group))
         visible_response = visible()
-        pdb.set_trace()
+#         pdb.set_trace()
         print "visibility check has finished"
         if visible_response.every:
             print "All Checkerboards found"

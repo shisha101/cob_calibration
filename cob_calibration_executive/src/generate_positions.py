@@ -426,14 +426,14 @@ def main():
 # #         print yaml.dump(joint_states)
     arm_list = [arm_left_group,arm_right_group]
     arm_palnning_refrence_frames = ['torso_3_link','torso_3_link']
-    orientation_mean = [[0.0049228, 0.01897, -0.70297, 0.71095],
-                        [0.0049228, 0.01897, -0.70297, 0.71095]]
-    limits = [    
-              [[0.57567,-0.021282,0.62907-0.485],[0.34636,0.542,1.1114-0.485]],
-              [[0.57567,-0.021282,0.62907-0.485],[0.34636,-0.542,1.1114-0.485]]
+    orientation_mean = [[0.70711, 0.70711, 0, 0],
+                        [0.70711, 0.70711, 0, 0]]
+    limits = [
+              [[0.35,-0.021282,0.62907-0.485],[0.6,0.542,1.1114-0.485]],
+              [[0.35,-0.021282,0.62907-0.485],[0.6,-0.542,1.1114-0.485]]
               ]
-    discritization = [[6,6,6],
-                      [6,6,6]]
+    discritization = [[2,2,2],
+                      [2,2,2]]
     Trajectory_Joint_angles = [] # the first element of each entry is the Trajectory list for all successful calibration points while the second is the list of finla joint angles corresponding to that list
     
     file_path = rospy.get_param('~output_path', None)
