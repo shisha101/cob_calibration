@@ -64,6 +64,7 @@ NODE = 'image_capture'
 import roslib
 roslib.load_manifest(PKG)
 import rospy
+import pdb
 
 import cv
 from sensor_msgs.msg import Image
@@ -155,11 +156,12 @@ class ImageCaptureNode():
         # save image
         cvImage = cv.CreateImage((1, 1), 1, 3)
         try:
-            cvImage = self.bridge.imgmsg_to_cv(rosImage, "bgr8")
+            cvImage = self.bridge.imgmsg_to_cv2(rosImage, "bgr8")
         except CvBridgeError, e:
             print e
+        pdb.set_trace()
         cv.SaveImage(self.output_folder + '/' + filenamePrefix +
-                     '%05d.jpg' % counter, cvImage)
+                     '%05d.jpg' % counter, cv.fromarray(cvImage))
 
         # save header
         if self.save_header_stamp:

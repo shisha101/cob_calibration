@@ -118,7 +118,7 @@ def capture_loop(positions, sss, visible, capture_kinematics, capture_image):
         
         # CONTINUE HERE
         visible_response = visible()
-        pdb.set_trace()
+        #pdb.set_trace()
         if visible_response.every:
             print "All Checkerboards found"
             capture_kinematics()                       ### Bool return value not handled    # Captures the joint values and image points
@@ -185,7 +185,6 @@ def data_capture_loop(group,visible,capture_kinematics,capture_image):
             capture_image()  
             counter_calibration_data += 1
             print "--> captured a sample"
-            counter_kinematics += 1
         else:
             print "No camera has detected the CB"
 

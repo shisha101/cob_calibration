@@ -169,8 +169,7 @@ def generate_calibration_trajectory(moveGroup,limits,discritization,orientation_
 
                     cb_publisher.publish(next_pose)  # is this publish still needed ??
                     rospy.sleep(0.2)
-                    transformation_base_cb = get_position(
-                        listener, '/chessboard_center')
+                    #transformation_base_cb = get_position(listener, '/chessboard_center')
 #                     [x1, y1, z1] = transformation_base_cb[0]
 #                     (dx, dy, dz) = (x1 - xhead, y1 - yhead, z1 - zhead)
 #                     roll = 0
@@ -196,8 +195,7 @@ def generate_calibration_trajectory(moveGroup,limits,discritization,orientation_
                     next_pose.pose.orientation.w = orientation_mean[3]
                     cb_publisher.publish(next_pose)
                     rospy.sleep(0.2)
-                    transformation_base_cb = get_position(
-                        listener, cb_link)
+                    #transformation_base_cb = get_position(listener, cb_link)
                 #Set starting pose for trajectory to continue planning from the last achieved point 
                 group_state.joint_state.position = current_joint_angles
                 moveGroup.set_start_state(group_state)
@@ -251,13 +249,13 @@ def main():
     camera_link_left = "/torso_cam3d_left_link" #renamed
     camera_link_right = "/torso_cam3d_right_link" #new addition
 
-    [xhead, yhead, zhead] = get_position(listener, camera_link_left)[0]
-    print "Positon wrt torso_cam3d_left"
-    print xhead, yhead, zhead
+    #[xhead, yhead, zhead] = get_position(listener, camera_link_left)[0]
+    #print "Positon wrt torso_cam3d_left"
+    #print xhead, yhead, zhead
     
-    [xhead, yhead, zhead] = get_position(listener, camera_link_right)[0]
-    print "Positon wrt torso_cam3d_left"
-    print xhead, yhead, zhead
+    #[xhead, yhead, zhead] = get_position(listener, camera_link_right)[0]
+    #print "Positon wrt torso_cam3d_left"
+    #print xhead, yhead, zhead
 
     print "--> setup care-o-bot for capture"
 #     next_pose = geometry_msgs.msg.PoseStamped()  #init of the geometry_msgs pose
@@ -426,10 +424,10 @@ def main():
 # #         print yaml.dump(joint_states)
     arm_list = [arm_left_group,arm_right_group]
     arm_palnning_refrence_frames = ['torso_3_link','torso_3_link']
-    orientation_mean = [[0.70711, 0.70711, 0, 0],
+    orientation_mean = [[0.67532, 0.73737, -0.0067638, 0.013437],
                         [0.70711, 0.70711, 0, 0]]
     limits = [
-              [[0.35,-0.021282,0.62907-0.485],[0.6,0.542,1.1114-0.485]],
+              [[0.70668, 0.10496, 0.78983],[0.33757, 0.1748, 1.1342]],
               [[0.35,-0.021282,0.62907-0.485],[0.6,-0.542,1.1114-0.485]]
               ]
     discritization = [[2,2,2],
