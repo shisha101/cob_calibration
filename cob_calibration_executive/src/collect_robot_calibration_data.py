@@ -171,7 +171,6 @@ def data_capture_loop(group,visible,capture_kinematics,capture_image):
         progress_pub.publish(msg)
         print "Progress of current group is %s out of %s" %(i, len(trajectory_of_group))
         visible_response = visible()
-#         pdb.set_trace()
         print "visibility check has finished"
         if visible_response.every:
             print "All Checkerboards found"
@@ -180,7 +179,9 @@ def data_capture_loop(group,visible,capture_kinematics,capture_image):
             print "--> captured a sample"
             counter_calibration_data += 1
         elif True in visible_response.visibleImages:               ### Doesn't make any sense
-            print "%s cameras have detected the CB" %visible_response.visibleImages.count(True)
+            print "%s camera(s) have detected the CB" %visible_response.visibleImages.count(True)
+            print (visible_response.visibleImages)
+#             pdb.set_trace()
             capture_kinematics()
             capture_image()  
             counter_calibration_data += 1
