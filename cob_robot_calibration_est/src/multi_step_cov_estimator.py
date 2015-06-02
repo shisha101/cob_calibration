@@ -168,13 +168,13 @@ if __name__ == '__main__':
         rospy.logerr("Could not find parameter [%s]. Please populate this namespace with the estimation configuration.", config_param_name)
         sys.exit(1)
     config = rospy.get_param(config_param_name) # contians all the sub parameters which are supplied to the optimizer
-    pdb.set_trace()
+#     pdb.set_trace()
     # Process all the sensor definitions that are on the parameter server
     sensors_name = "sensors"
     if sensors_name not in config.keys():
         rospy.logerr("Could not find namespace [%s/%s]. Please populate this namespace with sensors.", (config_param_name, sensors_name))
         sys.exit(1)
-    pdb.set_trace()
+#     pdb.set_trace()
     sensors_dump = [yaml.load(x) for x in config[sensors_name].values()]
     all_sensors_dict = build_sensor_defs(sensors_dump)
     all_sensor_types = list(set([x['sensor_type'] for x in all_sensors_dict.values()]))
@@ -215,7 +215,7 @@ if __name__ == '__main__':
     # Normally this would be set at the end of the calibration loop, but for the first step,
     # this is grabbed from the param server
     previous_system = yaml.load(config["initial_system"])
-    pdb.set_trace()
+#     pdb.set_trace()
     # Load all the sensors from the bagfile and config file
     for cur_step in step_list:
         print ""
@@ -230,7 +230,7 @@ if __name__ == '__main__':
         bag = rosbag.Bag(bag_filename)
         multisensors = []
         for topic, msg, t in bag.read_messages(topics=['/robot_measurement', 'robot_measurement']):
-            pdb.set_trace()
+#             pdb.set_trace()
             if topic == "robot_measurement" or topic == "/robot_measurement":
                 # Hack to rename laser id
 #                for cur_laser in msg.M_laser:
@@ -267,6 +267,7 @@ if __name__ == '__main__':
         else:
             free_dict = yaml.load(cur_step["free_params"])
             use_cov = cur_step['use_cov']
+            pdb.set_trace()
             if use_cov:
                 print "Executing step with covariance calculations"
             else:

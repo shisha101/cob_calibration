@@ -305,9 +305,9 @@ class DataCollector():
             #----------------------
             # Fill robot_msg
             #----------------------
-            robot_msg.M_chain = self.transformations.values()
+                robot_msg.M_chain = self.transformations.values()
     
-            self._robot_measurement_pub.publish(robot_msg) # this data is saved to a bag file for later use
+                self._robot_measurement_pub.publish(robot_msg) # this data is saved to a bag file for later use
         if(True in detected_image_flag):
             return True
         else:
