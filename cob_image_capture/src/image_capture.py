@@ -159,7 +159,7 @@ class ImageCaptureNode():
             cvImage = self.bridge.imgmsg_to_cv2(rosImage, "bgr8")
         except CvBridgeError, e:
             print e
-        pdb.set_trace()
+#         pdb.set_trace()
         cv.SaveImage(self.output_folder + '/' + filenamePrefix +
                      '%05d.jpg' % counter, cv.fromarray(cvImage))
 

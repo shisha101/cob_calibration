@@ -164,7 +164,7 @@ class VisibilityCheckerNode():
             # grab image messages
         #print '%s checkerboards found --> return %s'%(sum(visible),all(visible))
         response = VisibleResponse()
-        pdb.set_trace()
+#         pdb.set_trace()
         response.every = False
         response.master = False
         response.visibleImages = visible

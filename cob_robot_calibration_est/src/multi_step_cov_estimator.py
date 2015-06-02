@@ -50,7 +50,7 @@ from numpy import matrix
 
 from cob_robot_calibration_est.robot_params import RobotParams
 from cob_robot_calibration_est.sensors.multi_sensor import MultiSensor
-from cob_robot_calibration_est.opt_runner import opt_runner
+# from cob_robot_calibration_est.opt_runner import opt_runner
 
 def usage():
     rospy.logerr("Not enough arguments")
@@ -268,7 +268,7 @@ if __name__ == '__main__':
                 print "Executing step with covariance calculations"
             else:
                 print "Executing step without covariance calculations"
-            output_dict, output_poses, J = opt_runner(previous_system, previous_pose_guesses, free_dict, multisensors, use_cov)
+#             output_dict, output_poses, J = opt_runner(previous_system, previous_pose_guesses, free_dict, multisensors, use_cov)
 
         # Dump results to file
         out_f = open(output_dir + "/" + cur_step["output_filename"] + ".yaml", 'w')
