@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+'''
+@summary: this file was is used for trial purposes only
+'''
 PKG = 'cob_calibration_executive'
 NODE = 'robot_test_node'
 import sys

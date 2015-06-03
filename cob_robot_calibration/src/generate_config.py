@@ -281,7 +281,7 @@ def __main__():
     with open(sensors_path, "r") as f:
         sensors = yaml.load(f)
     pdb.set_trace()
-    transformations = get_chains(sensors)
+    transformations = get_chains(sensors)# only interested in the sensor chains entry not the rest
     print sensors
     transformation_dict = generate_transformation_dict(
         transformations, listener)
