@@ -31,6 +31,8 @@
     <include file="$(find cob_calibration_executive)/launch/chessboard_position.launch"/>
     <include file="$(find cob_calibration_executive)/launch/upload_params.launch"/>
     
+    <!-- This is the loading of the CB information -->
+    <rosparam file="$(find cob_calibration_config)/$(env ROBOT)/user_defined/calibration_pattern.yaml"/>
     <!-- run Trial node to check the robot -->
     <!-- <node type="Robot_Trial.py" pkg="cob_calibration_executive" name="$(anon Robot_Trial)" output="screen"></node> -->
 

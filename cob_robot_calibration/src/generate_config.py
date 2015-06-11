@@ -87,6 +87,7 @@ def get_chains(d, origin='base_link'):
     print " Trees: "
     print trees
     # to_calibrate = list(set(to_calibrate))
+    pdb.set_trace()
     return trees
     # return transformations, to_calibrate
 
@@ -109,7 +110,7 @@ def build_tree(chain, kinematic_chains, origin):
     @summary: this function 
     '''
     tree = [origin]
-    tree += [''.join(chain['before_chain'])]# appending an epty string incase the chain before is empty
+    tree += [''.join(chain['before_chain'])]# appending an empty string in case the chain before is empty
     tree = cleanup_tree(tree)
     for chain_id in chain['chains']:
         kinematic_chain = kinematic_chains[chain_id]
@@ -283,6 +284,7 @@ def __main__():
     pdb.set_trace()
     transformations = get_chains(sensors)# only interested in the sensor chains entry not the rest
     print sensors
+    pdb.set_trace()
     transformation_dict = generate_transformation_dict(
         transformations, listener)
     print transformation_dict
