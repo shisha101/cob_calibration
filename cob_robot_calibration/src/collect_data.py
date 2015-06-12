@@ -85,7 +85,7 @@ class DataCollector():
     Subscribes to various topics needed (e.g. images, camera infos, joint angles) and
     provides a service. When service is called, a set of samples is recorded,
     processed (e.g. checkerboards are detected) and combined to a RobotMeasurement message
-    which is published as /robot_measurement.
+    which is published to /robot_measurement.
     '''
 
     def __init__(self):

@@ -75,7 +75,7 @@ import pdb # debugger
 
 def capture_loop(positions, sss, visible, capture_kinematics, capture_image):
     '''
-    @deprecated: This function is on its way to being depreciated check out data_capture_loop()
+    @deprecated: This function is being depreciated check out data_capture_loop()
     Moves arm to all positions using script server instance sss
     and calls capture() to capture samples
     '''
@@ -139,9 +139,9 @@ def capture_loop(positions, sss, visible, capture_kinematics, capture_image):
 
 def data_capture_loop(group,visible,capture_kinematics,capture_image):
     '''
-    @summary: the function takes a group and loops through the corresponding trajectroies 
+    @summary: the function takes a group and loops through the corresponding trajectories 
     which are auto-generated from generate_positions.py and iterates through them, it checks if a camera
-    detectecs a CB pattern and if so saves the camera ID and Kinematics of the robot in a bag file by
+    detects a CB pattern and if so saves the camera ID and Kinematics of the robot in a bag file by
     publishing to the /collect_data/capture using the service defined in collect_data
     @param group: this is the group for which the function will load the .yaml file
     and move the group
