@@ -29,8 +29,23 @@ def get_position_euler(listener,base , tip):
 def get_parents():
     return 
 
-def get_children():
-    return
+def get_children(origin_frame,link_child_map_dict):
+    '''
+    @summary: this function returns the children of a givien link
+    @param origin_frame: the frame for which we will get the children
+    @param link_child_map_dict: the complete child map from the urdf 
+#     @param all_camera_children_links_dict: this is a storage dictionary for all cameras and is passed to be populated
+#     @param transformations_dict_debug: a debugging dict that is used for debugging
+#     @param Flag: this determines if the frame is a chain or a sensor
+    @return: returns a list of linkswhich are the children of the parent link 
+    '''
+    children_link_tree = []
+    current_link = origin_frame
+    while (link_child_map_dict.has_key(current_link)):# as long as the current frame has children append the children to children_link_tree
+        childe_of_current_frame = link_child_map_dict[current_link][-1][-1]# the last entry contains the child link the
+        children_link_tree.append(childe_of_current_frame)
+        current_link = childe_of_current_frame
+    return children_link_tree
     
 def get_dh_chains_for_acctuated_sensors():
     return
@@ -40,6 +55,7 @@ def generate_dh_parameters_for_dh_chains(sensor_chain_groups,robot_urdf):
     @param sensor_chain_groupsparam: this is the list of moveitcommandgroups for which the dh parameters will be extracted 
     @param robot_urdfparam: this is the robot urdf reader that supplies the information 
     """
+#     population of dh_chains in the format that is understood by the optimizer not that willow garage use real DH parameters here we are using xyz and rpy
     dh_chains_dict = dict() # this corresponds to the dh_chains in the system yaml
     for group_current in sensor_chain_groups:
         current_chain_joint_names = group_current.get_joints()
@@ -106,7 +122,6 @@ def main():
     
     
     system_dict = dict()  # this is the entry corresponding to the system yaml file
-    dh_chains_dict = dict() # this corresponds to the dh_chains in the system yaml
     transfomations_dict = dict()
     sensors_dict = dict() # this is the complete system that will be saved
     '''
@@ -118,47 +133,17 @@ def main():
     camera_frames = ["torso_cam3d_left_link","torso_cam3d_right_link","torso_cam3d_down_link","gripper_left_camera_link","gripper_right_camera_link"]# the sensor links 
     cb_frames = ["cb_6x9_base_link_left","cb_6x9_base_link_right"] # CB links fixed to end effector
     
+    
+    link_parent_map_dict = robot_urdf.parent_map # a dict with a key for each link in the URDF each entry shows the links joint and the parent of that joint
+    link_child_map_dict = robot_urdf.child_map  # a dict with a key for each link in the URDF each entry shows the links joint and the children of that joint
     '''
     @todo: the code below should be changed into functions divided into 
     - generate parents
     - generate children
     - extract DH chains for cameras and sensors
-    - generate DH_chains for system yaml
+    - generate DH_chains for system yaml (done)
     '''
-    
-#------------------------------------------------------------------------------ 
-    ## population of dh_chains in the format that is understood by the optimizer not that willow garage use real DH parameters here we are using xyz and rpy 
-    '''
-    for group_current in sensor_chain_groups:
-        current_chain_joint_names = group_current.get_joints()
-        sensor_list = []#this corresponds to the list inside system for dh parameters for each group
-        for joint_name_current in current_chain_joint_names:
-            current_joint = robot_urdf.joints[joint_name_current]
-            type_of_joint = ""
-            # print joint.name
-            if current_joint.joint_type == current_joint.REVOLUTE:
-                type_of_joint += "rot"
-            elif current_joint.joint_type == current_joint.PRISMATIC:
-                type_of_joint += "trans"
-            else:
-                print"The type of %s is not prismatic nor revolute please check"% current_joint.name
-#             pdb.set_trace()
-            if current_joint.axis == "1 0 0":
-                type_of_joint += "x"
-            elif current_joint.axis == "0 1 0":
-                type_of_joint += "y"
-            elif current_joint.axis == "0 0 1":
-                type_of_joint += "z"
-            sensor_list.append({"name":current_joint.name,
-                                "type": type_of_joint,
-                                "xyzrpy": current_joint.origin.position + current_joint.origin.rotation})# here we append a dictionary for each joint
-        
-        dh_chains_dict[group_current.get_name()] = {"cov":[0.01]*len(sensor_list),
-                                                    "dh":sensor_list,
-                                                    "gearing":[1]*len(sensor_list)
-                                                    }#appending the chain to DH chains
-    system_dict["dh_chains"] = dh_chains_dict
-    '''
+
     system_dict["dh_chains"] = generate_dh_parameters_for_dh_chains(sensor_chain_groups,robot_urdf)# this corresponds to the dh_chains in the system yaml
 #     pdb.set_trace()
     #construction of transformation part of the system description
@@ -197,15 +182,10 @@ def main():
             parent_link_tree = []
             children_link_tree = []
             transformations_dict_debug[camera_frame] = dict() #used for debuging
-#             DH_chain_of_camera = []
-#             Base_of_DH_chain = []
 #this part corresponds to the extraction of the children of the camera frame the children are used to fully define the robots kinematics (since the order of the joints is specified in the sensors.yaml)
             print "starting child extraction"
             current_frame = camera_frame
-            while (link_child_map_dict.has_key(current_frame)):# as long as the current frame has children append the children to children_link_tree
-                childe_of_current_frame = link_child_map_dict[current_frame][-1][-1]# the last entry contains the child link the
-                children_link_tree.append(childe_of_current_frame)
-                current_frame = childe_of_current_frame
+            children_link_tree = get_children(current_frame, link_child_map_dict)
             all_camera_children_links_dict[camera_frame] = children_link_tree
             transformations_dict_debug[camera_frame]["children"] = children_link_tree
 #this part corresponds to the extraction of the parents of the camera frame it does not append the last parent as it is either the base_frame or one of the links in the DH chains
@@ -269,12 +249,7 @@ def main():
 # starting the extraction of children for the current DH group
         current_link_in_grp = last_link_of_group
         if robot_urdf.links.has_key(last_link_of_group):
-            dh_children = []
-            while(link_child_map_dict.has_key(current_link_in_grp)): # as long as the current frame has children append the children to dh_children
-                childe_of_current_link = link_child_map_dict[current_link_in_grp][-1][-1]# the last entry contains the child link the
-                dh_children.append(childe_of_current_link)
-                current_link_in_grp = childe_of_current_link
-            transformations_dict_debug[group_current.get_name()]["children"] = dh_children
+            transformations_dict_debug[group_current.get_name()]["children"] = get_children(last_link_of_group, link_child_map_dict)
 # starting the extraction of parents for the current DH group 
         current_link_in_grp = first_link_of_group           
         if robot_urdf.links.has_key(first_link_of_group):
