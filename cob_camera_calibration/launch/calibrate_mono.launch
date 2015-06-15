@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+    <node type="calibrate_from_bag.py" pkg="cob_camera_calibration" name="cob_camera_calibration" output="screen">
+        <param name="pattern_size" value="9x6" />
+        <param name="square_size" value="0.03" />
+    </node>
+
+
+
+</launch>
