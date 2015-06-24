@@ -24,7 +24,7 @@ defined as a DH parameter group since this affects the static transformations de
 @note: note that this script does not account for the possibility of one link having multiple parents
 @note: This code has not been implemented to perform as fast as possible but to be as modular and easy to trace/edit as possible
 '''
-def extract_transformations(extraction_tree,listener,sanity_check_dict, parent_of_extraction_tree):
+def extract_transformations(extraction_tree,listener,sanity_check_dict, parent_of_extraction_tree, endframe_of_extraction_tree):
     '''
     @summary: This method extracts the transformations from the end of a given list to the start, 
     this however does not yet extract the transformation of the last element of 
@@ -36,25 +36,32 @@ def extract_transformations(extraction_tree,listener,sanity_check_dict, parent_o
     the program if a frame tries to be transformed to two or more different parents
     @param parent_of_extraction_tree: this is the name of the parent link of the 
     extraction tree for which a will be transformed to relative to the example given in the summary
+#     @param child_of_extraction_tree: This is the transformation from a
     @return: returns a dict of the transformation relative to one another
     '''
     transformation_sub_dict = dict()
-    if extraction_tree != []:# if the extraction tree has atleast one entry aka not empty
-        for i in xrange(len(extraction_tree)-1, 1, -1): # decremental loop from (start, step, increment)
-                current_frame = extraction_tree[i]
-                parent_frame = extraction_tree[i-1]
+    extraction_tree_copy = list(extraction_tree)
+#     pdb.set_trace()
+    if extraction_tree_copy != []:# if the extraction tree has atleast one entry aka not empty
+        if parent_of_extraction_tree != None:
+            extraction_tree_copy.insert(0, parent_of_extraction_tree) # add the parent of the extraction tree to the tree
+        if endframe_of_extraction_tree != None:
+            extraction_tree_copy.append(endframe_of_extraction_tree) # add the parent of the extraction tree to the tree
+        for i in xrange(len(extraction_tree_copy)-1, 0, -1): # decremental loop from (start, step, increment)
+#                 if(i==1):
+#                     print "I is equal to 1"
+                current_frame = extraction_tree_copy[i]
+                parent_frame = extraction_tree_copy[i-1]
                 translation, rotation_euler = get_position_euler(listener, parent_frame, current_frame)
                 
                 if sanity_check_dict.has_key(current_frame):
                     if sanity_check_dict[current_frame] != parent_frame:
                         print 'the frame %s has been previously transformed to %s and now requests to be transformed to %s'%(current_frame,sanity_check_dict[current_frame],parent_frame)
-                        pdb.set_trace()
+#                         pdb.set_trace()
                 else:
                     sanity_check_dict[current_frame] = parent_frame # this denotes that this frame has been transformed to the frame before
                 transformation = list(translation) + list(rotation_euler) # list of rotations
                 transformation_sub_dict[current_frame] = transformation
-    else:
-        transformation = []
     return transformation_sub_dict, sanity_check_dict
 
 def get_position_euler(listener,base , tip):
@@ -81,13 +88,11 @@ def get_parents(origin_frame,link_parent_map_dict,all_group_links,base_frame,Act
 #     parents_link_tree.append(current_frame)
     if Actuated_Flag:
         while (not any(current_frame in group_links for group_links in all_group_links.itervalues()) and current_frame != base_frame):# the current parent is an the base frame or a part of a DH chain
-            print current_frame
             if(link_parent_map_dict.has_key(current_frame)):
                 parent_of_current_link = link_parent_map_dict[current_frame][-1]# the last entry contains the parent link the
                 if(not any(parent_of_current_link in group_links for group_links in all_group_links.itervalues())):# check if the link to be appended is part of the DH groups if not then append
                     parents_link_tree.append(parent_of_current_link)
                 current_frame = parent_of_current_link
-#             print parent_link_tree
             else:
                 print "the current frame for %s has no parent"%origin_frame
                 print "the parent tree found for %s is:\n %s"%(origin_frame,parents_link_tree)
@@ -108,7 +113,6 @@ def get_parents(origin_frame,link_parent_map_dict,all_group_links,base_frame,Act
                 sys.exit("")
         linked_to_DH_chain = False
     parents_link_tree.reverse()
-    print (current_frame == base_frame)
     return parents_link_tree,linked_to_DH_chain,current_frame
 
 def get_children(origin_frame,link_child_map_dict):
@@ -276,8 +280,8 @@ def main():
     """
             @note: this is only used for debugging 
     """
-    Dump_dict_debug = dict()# temp dict used to visualize the data coming out of the function
-    Dump_dict_debug["camera_chains"] = []# initalize a list of dicts
+#     Dump_dict_debug = dict()# temp dict used to visualize the data coming out of the function
+#     Dump_dict_debug["camera_chains"] = []# initalize a list of dicts
     transformations_dict_debug = dict()
 #===============================================================================
 # construction of the sensor yaml   and extraction of transofmations needed for the system yaml 
@@ -304,7 +308,6 @@ def main():
 #this part corresponds to the extraction of the parents of the camera frame it does not append the last parent as it is either the base_frame or one of the links in the DH chains
             current_frame = camera_frame
             print "starting parent extraction"
-            print current_frame
             all_camera_parent_links_dict[camera_frame],linked_to_DH_chain,current_frame = get_parents(current_frame, link_parent_map_dict, all_group_links, base_frame, True)
             transformations_dict_debug[camera_frame]["parents"] = all_camera_parent_links_dict[camera_frame]
             print "checking if %s is fixed to a DH group or static"%camera_frame
@@ -329,19 +332,16 @@ def main():
             @note: this is only used for debugging 
             """
             
-            temp_merge_dict = dict()
-            temp_merge_dict["sensor_id"] = camera_frame
-            temp_merge_dict["camera_id"] = camera_frame
-            temp_merge_dict["chain"] = {"before_chain":parent_link_tree,
-                                        "chain":all_camera_dh_chains[camera_frame],
-                                        "after_chain":children_link_tree}
-            
-            
-            Dump_dict_debug["camera_chains"].append(temp_merge_dict) # dict entry here for specific camera_sensor_chain
+#             temp_merge_dict = dict()
+#             temp_merge_dict["sensor_id"] = camera_frame
+#             temp_merge_dict["camera_id"] = camera_frame
+#             temp_merge_dict["chain"] = {"before_chain":parent_link_tree,
+#                                         "chain":all_camera_dh_chains[camera_frame],
+#                                         "after_chain":children_link_tree}         
+#             Dump_dict_debug["camera_chains"].append(temp_merge_dict) # dict entry here for specific camera_sensor_chain
         else:
             print "the link %s does not exist inside the urdf\n System Exiting" %camera_frame
             sys.exit("")
-    
 #=========================================================================
 # extracting information relevant to the DH chains
 #=========================================================================
@@ -369,6 +369,9 @@ def main():
 
 # Generation of the camera_chains entry
     sensors_dict["camera_chains"] = []
+    '''
+    @note: watch out with appends as they affect all the lists , pointers therfore use a new list 
+    '''
     for camera_current in camera_frames:
         # the before chain is the transformation from the base of the DH_group to the base
         #base->base_of_DH_chain = before_chain, base_of_DH_chain-> tip_of_DH_chain = DH_chain (variable), tip_of_DH_chain -> camera = after_chain
@@ -377,8 +380,8 @@ def main():
             before_chain = all_dh_chains_details[name_of_dh_group]["parents"]#then set the before chain to be the transformation from the base base->base_of_DH_chain
 #             before_chain = before_chain + all_camera_parent_links_dict[camera_current] # appending the lists together
 #             after_chain = []#all_camera_children_links_dict[camera_current]#[]
-            after_chain = all_camera_parent_links_dict[camera_current] # the after chain are the parents of the camera link up to the start of the DH_chain
-
+            after_chain = list(all_camera_parent_links_dict[camera_current]) # the after chain are the parents of the camera link up to the start of the DH_chain
+            after_chain.append(camera_current)# add the frame at the end of the chain
         else:
             before_chain = all_camera_parent_links_dict[camera_current] # if there is no DH chain then the parent of the camera link should be the base
             after_chain = [camera_current]#all_camera_children_links_dict[camera_current]#[]
@@ -425,73 +428,50 @@ def main():
 
 #extract transformations for children
         extraction_chain = all_dh_chains_details[name_of_sensor_chain]["children"]
-        system_dict["transforms"][current_frame],sanity_check_dict = extract_transformations(extraction_chain, listener, sanity_check_dict)# list of rotations
-        '''
-        for i in xrange(len(all_dh_chains_details[name_of_sensor_chain]["children"])-1, 1, -1): # decremental loop from (start, step, increment)
-            current_frame = all_dh_chains_details[name_of_sensor_chain]["children"][i]
-            parent_frame = all_dh_chains_details[name_of_sensor_chain]["children"][i-1]
-            translation, rotation_euler = get_position_euler(listener, parent_frame, current_frame)
-            
-            if sanity_check_dict.has_key(current_frame):
-                if sanity_check_dict[current_frame] != parent_frame:
-                    print 'the frame %s has been previously transformed to %s and now requests to be transformed to %s'%(current_frame,sanity_check_dict[current_frame],parent_frame)
-                    pdb.set_trace()
-            else:
-                sanity_check_dict[current_frame] = parent_frame # this denotes that this frame has been transformed to the frame before
-            system_dict["transforms"][current_frame] = list(translation) + list(rotation_euler) # list of rotations
-        '''
+        end_link_of_group = all_group_links[sensor_chain.get_name()][-1]
+        transformations_of_current_chain,sanity_check_dict = extract_transformations(extraction_chain, listener, sanity_check_dict,end_link_of_group,None)# list of rotations
+        system_dict["transforms"].update(transformations_of_current_chain)
         
 #extract transformations for parents
         extraction_chain = all_dh_chains_details[name_of_sensor_chain]["parents"]
-        system_dict["transforms"][current_frame],sanity_check_dict = extract_transformations(extraction_chain, listener, sanity_check_dict)# list of rotations
-        '''
-        for i in xrange(len(all_dh_chains_details[name_of_sensor_chain]["parents"])-1, 1, -1): # decremental loop from (start, step, increment)
-            current_frame = all_dh_chains_details[name_of_sensor_chain]["parents"][i]
-            parent_frame = all_dh_chains_details[name_of_sensor_chain]["parents"][i-1]
-            translation, rotation_euler = get_position_euler(listener, parent_frame, current_frame)
-            if sanity_check_dict.has_key(current_frame):
-                if sanity_check_dict[current_frame] != parent_frame:
-                    print 'the frame %s has been previously transformed to %s and now requests to be transformed to %s'%(current_frame,sanity_check_dict[current_frame],parent_frame)
-                    pdb.set_trace()
-            else:
-                sanity_check_dict[current_frame] = parent_frame # this denotes that this frame has been transformed to the frame before
-            system_dict["transforms"][current_frame] = list(translation) + list(rotation_euler) # list of rotations
-        '''         
+        transformations_of_current_chain,sanity_check_dict = extract_transformations(extraction_chain, listener, sanity_check_dict,None,None)# list of rotations
+        system_dict["transforms"].update(transformations_of_current_chain)    
     for camera_frame in camera_frames: # for each camera frame 
 
 #extract transformations for children
-        pdb.set_trace()
         extraction_chain = all_camera_children_links_dict[camera_frame]
-        system_dict["transforms"][current_frame],sanity_check_dict = extract_transformations(extraction_chain, listener, sanity_check_dict)# list of rotations
-        '''
-        for i in xrange(len(all_camera_children_links_dict[camera_frame])-1, 1, -1): # decremental loop from (start, step, increment)
-            current_frame = all_camera_children_links_dict[camera_frame][i]
-            parent_frame = all_camera_children_links_dict[camera_frame][i-1]
-            translation, rotation_euler = get_position_euler(listener, parent_frame, current_frame)
-            if sanity_check_dict.has_key(current_frame):
-                if sanity_check_dict[current_frame] != parent_frame:
-                    print 'the frame %s has been previously transformed to %s and now requests to be transformed to %s'%(current_frame,sanity_check_dict[current_frame],parent_frame)
-                    pdb.set_trace()
-            else:
-                sanity_check_dict[current_frame] = parent_frame # this denotes that this frame has been transformed to the frame before
-            system_dict["transforms"][current_frame] = list(translation) + list(rotation_euler) # list of rotations
-        '''
+        transformations_of_current_chain,sanity_check_dict = extract_transformations(extraction_chain, listener, sanity_check_dict,None,None)# list of rotations
+        system_dict["transforms"].update(transformations_of_current_chain)
+
 #extract transformations for parents   
         extraction_chain = all_camera_parent_links_dict[camera_frame]
-        system_dict["transforms"][current_frame],sanity_check_dict = extract_transformations(extraction_chain, listener, sanity_check_dict)# list of rotations
-        '''     
-        for i in xrange(len(all_camera_parent_links_dict[camera_frame])-1, 1, -1): # decremental loop from (start, step, increment)
-            current_frame = all_camera_parent_links_dict[camera_frame][i]
-            parent_frame = all_camera_parent_links_dict[camera_frame][i-1]
-            translation, rotation_euler = get_position_euler(listener, parent_frame, current_frame)
-            if sanity_check_dict.has_key(current_frame):
-                if sanity_check_dict[current_frame] != parent_frame:
-                    print 'the frame %s has been previously transformed to %s and now requests to be transformed to %s'%(current_frame,sanity_check_dict[current_frame],parent_frame)
-                    pdb.set_trace()
+        transformations_of_current_chain,sanity_check_dict = extract_transformations(extraction_chain, listener, sanity_check_dict,None,camera_frame)# list of rotations
+        system_dict["transforms"].update(transformations_of_current_chain)
+        
+#------------------------------------------------------------------------------ 
+# final check for verification check that all transformations mentioned on the sensor.yaml are present in the system.yaml
+    for key, array_of_dicts in sensors_dict.iteritems(): #for each entry in sensors
+        not_present_transforamtions = []
+        for dictt in array_of_dicts:
+            if key == 'camera_chains':
+                dict_to_work_on = dictt['chain']
+            elif key == 'chains':
+                dict_to_work_on = dictt
+            elif key == 'sensor_chains':
+                dict_to_work_on = dictt
             else:
-                sanity_check_dict[current_frame] = parent_frame # this denotes that this frame has been transformed to the frame before
-            system_dict["transforms"][current_frame] = list(translation) + list(rotation_euler) # list of rotations
-        '''
+                print 'There is a key (%s) inside the sensor_dict which corresponds to the sensor.yaml which is not defined'%key
+                sys.exit("")
+            for key_work_on, list_in_key in dict_to_work_on.iteritems():
+                if key_work_on == 'after_chain' or key_work_on == 'before_chain' :
+                    for value in list_in_key:
+                        if value != base_frame and value not in system_dict["transforms"]:
+                            not_present_transforamtions.append(value)
+    if not_present_transforamtions == []:
+        print "All transformations were found"
+    else:
+        print "the following transformations were not fount: "
+        print not_present_transforamtions
 #------------------------------------------------------------------------------ 
 # file dumping
     output_system = os.path.abspath("IDEcatkin_ws/src/cob_calibration/cob_calibration_executive/test/sensor_trial.yaml")
@@ -510,47 +490,11 @@ def main():
     with open(output_system, 'w') as f:
         f.write('####### This file is autogenerated. Do not edit #######\n')
         f.write(yaml.dump(sanity_check_dict))
-#         i += 1 
-    
-    
-    
-    print "this is the end of the camera tree loop"
-    pdb.set_trace()
-    for group_current in sensor_chain_groups:# iterate through all the groups for kinematics which also act as sensors
-        first_joint_of_group = group_current.get_joints()[0] #this returns the first element of the list of joints
-        base_link_of_currnet_group = robot_urdf.joints[first_joint_of_group].parent # the parent of the 1st joint is the base link for the group
-#         pdb.set_trace()
-        translation, rotation_euler = get_position_euler(listener, base_frame, base_link_of_currnet_group)
-        transfomations_dict[base_link_of_currnet_group] = list(translation) + list(rotation_euler) # list of rotations
-#         print transfomations_dict
-    for cb in cb_frames:
-        if robot_urdf.links.has_key(cb): #we have a CB in the left hand
-            translation, rotation_euler = get_position_euler(listener, base_frame, cb)
-            transfomations_dict[cb] = list(translation) + list(rotation_euler) # list of rotations
-        else:
-            print "the link %s does not exist inside the urdf" %cb
-    print transfomations_dict
-    for camera_frame in camera_frames:
-        if robot_urdf.links.has_key(camera_frame): #we have a CB in the left hand
-            translation, rotation_euler = get_position_euler(listener, base_frame, camera_frame)
-            transfomations_dict[camera_frame] = list(translation) + list(rotation_euler) # list of rotations
-        else:
-            print "the link %s does not exist inside the urdf" %camera_frame
-    print transfomations_dict
-#       translation, rotation_quat = get_position(listener, base_frame, left_arm_group.get_end_effector_link())
-    system_dict['checkerboards'] = rospy.get_param('checkerboards', None)
-    if system_dict['checkerboards'] is None:
-        print '[ERROR]: Parameter checkerboards not found. Make sure it is set and try again'
-        return
-    
-    
-#     output_system = '~/Home/Refrences/SystemTrial.yaml'
-    pdb.set_trace()
-    output_system = os.path.abspath("IDEcatkin_ws/src/cob_calibration/cob_calibration_executive/test/SystemTrial.yaml")
-    with open(output_system, 'w') as f:
-        f.write('####### This file is autogenerated. Do not edit #######\n')
-        f.write(yaml.dump(system_dict))  
 
+    print '==============================================================================='
+    print "this is the end of the camera tree loop"
+    print "note that there is a pdb at the end of the code preventing termination"
+    print '==============================================================================='
     """
     @attention: This are the functions and parameters of the URDF
     """

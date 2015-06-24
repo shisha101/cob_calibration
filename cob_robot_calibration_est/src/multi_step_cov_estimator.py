@@ -51,7 +51,7 @@ from numpy import matrix
 
 from cob_robot_calibration_est.robot_params import RobotParams
 from cob_robot_calibration_est.sensors.multi_sensor import MultiSensor
-# from cob_robot_calibration_est.opt_runner import opt_runner
+from cob_robot_calibration_est.opt_runner import opt_runner
 
 def usage():
     rospy.logerr("Not enough arguments")
@@ -141,6 +141,7 @@ def load_requested_sensors(all_sensors_dict, requested_sensors):
             cur_sensor_type = all_sensors_dict[requested_sensor_id]['sensor_type']
             cur_sensors[cur_sensor_type].append(all_sensors_dict[requested_sensor_id])
         else:
+#             pdb.set_trace()
             rospy.logerr("Could not find [%s] in block library. Skipping this block")
     return cur_sensors
 
@@ -149,6 +150,7 @@ if __name__ == '__main__':
 
     print "Starting The Multi Step [Covariance] Estimator Node\n"
 # checking the number of parameters loaded in the launch file and handling their presense or absence 
+# file_path = rospy.get_param('~output_path', None)
     if (len(rospy.myargv()) < 2):
         usage()
     elif (len(rospy.myargv()) < 3):
@@ -157,12 +159,10 @@ if __name__ == '__main__':
     else:
         bag_filename = rospy.myargv()[1]
         output_dir = rospy.myargv()[2]
-
     print "Using Bagfile: %s\n" % bag_filename
     if not os.path.isfile(bag_filename):
         rospy.logerr("Bagfile does not exist. Exiting...")
         sys.exit(1)
-
     config_param_name = "calibration_config" # the name space under which the camera, sensor, system and steps are loaded 
     if not rospy.has_param(config_param_name):
         rospy.logerr("Could not find parameter [%s]. Please populate this namespace with the estimation configuration.", config_param_name)
@@ -178,7 +178,6 @@ if __name__ == '__main__':
     sensors_dump = [yaml.load(x) for x in config[sensors_name].values()]
     all_sensors_dict = build_sensor_defs(sensors_dump)
     all_sensor_types = list(set([x['sensor_type'] for x in all_sensors_dict.values()]))
-
     # Load all the calibration steps.
     step_list = load_calibration_steps(config["cal_steps"])
 
@@ -215,7 +214,7 @@ if __name__ == '__main__':
     # Normally this would be set at the end of the calibration loop, but for the first step,
     # this is grabbed from the param server
     previous_system = yaml.load(config["initial_system"])
-#     pdb.set_trace()
+    
     # Load all the sensors from the bagfile and config file
     for cur_step in step_list:
         print ""
@@ -223,6 +222,7 @@ if __name__ == '__main__':
         print "Beginning [%s]" % cur_step["name"]
 
         # Need to load only the sensors that we're interested in
+        pdb.set_trace()
         cur_sensors = load_requested_sensors(all_sensors_dict, cur_step['sensors'])
 
         # Load all the sensors from bag
@@ -267,12 +267,13 @@ if __name__ == '__main__':
         else:
             free_dict = yaml.load(cur_step["free_params"])
             use_cov = cur_step['use_cov']
-            pdb.set_trace()
+#             pdb.set_trace()
             if use_cov:
                 print "Executing step with covariance calculations"
             else:
                 print "Executing step without covariance calculations"
-#             output_dict, output_poses, J = opt_runner(previous_system, previous_pose_guesses, free_dict, multisensors, use_cov)
+            pdb.set_trace()
+            output_dict, output_poses, J = opt_runner(previous_system, previous_pose_guesses, free_dict, multisensors, use_cov)
 
         # Dump results to file
         out_f = open(output_dir + "/" + cur_step["output_filename"] + ".yaml", 'w')

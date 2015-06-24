@@ -74,7 +74,7 @@ from control_msgs.msg import JointTrajectoryControllerState
 import tf
 import pdb
 CHECKERBOARD_NAME = "cb_9x6"            ### Should be read from an yaml file
-CHECKERBOARD_CHAIN = "arm_chain"        ### Should be read from an yaml file
+CHECKERBOARD_CHAIN = "arm_right"        ### Should be read from an yaml file
 
 
 class DataCollector():
@@ -86,6 +86,10 @@ class DataCollector():
     provides a service. When service is called, a set of samples is recorded,
     processed (e.g. checkerboards are detected) and combined to a RobotMeasurement message
     which is published to /robot_measurement.
+    
+    @todo: this file should be updated such that the CHECKERBOARD_NAME and 
+    CHECKERBOARD_CHAIN are passed as inputs from the call of the service since 
+    now they are taken as hard coded constants
     '''
 
     def __init__(self):
