@@ -42,14 +42,6 @@ def calibrate_mono(bag_file_dir, boards, camera_namespace, pattern=Patterns.Ches
             cameras[cam]['raw_images'].append(msg.M_cam[0].image)
     bag.close()
     
-    bridge = CvBridge()
-    for key, value in cameras.iteritems():              # Convert ROS Image msg into CV format
-        print key
-        for img in cameras[key]['raw_images']:
-            i1 = bridge.imgmsg_to_cv2(img, 'bgr8')
-            cameras[key]['cv_images'].append(i1)
-    
-    
     for key, value in cameras.iteritems():
         cameras[key]['calibrator'] = MonoCalibrator(boards,           # Init the calibrator object for each camera
                                                     calib_flags, 
@@ -87,8 +79,9 @@ def calibrate_mono(bag_file_dir, boards, camera_namespace, pattern=Patterns.Ches
     
     for key in cameras.keys():
         #if cameras[key]['goodenough'] is True:                ### Should we check goodenough?
-        print cameras[key]['calibrator'].do_calibration()
-        cameras[key]['calibrator'].do_save(directory, key)
+        if len(cameras[key]['calibrator'].good_corners) > 0:
+            print cameras[key]['calibrator'].do_calibration()
+            cameras[key]['calibrator'].do_save(directory, key)
         
 
 
