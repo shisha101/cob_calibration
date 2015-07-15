@@ -53,6 +53,7 @@
 # If not, see <http://www.gnu.org/licenses/>.
 #
 #################################################################
+from visualization_msgs.msg._MarkerArray import MarkerArray
 PKG = 'cob_calibration_executive'
 NODE = 'generate_robot_calibration_data_node'
 """ The strings here regarding group names should be accounted for later.
@@ -71,6 +72,8 @@ import numpy as np
 import yaml
 import os
 import math
+from visualization_msgs.msg import Marker
+from visualization_msgs.msg import MarkerArray
 from simple_script_server import simple_script_server
 from random import shuffle  #shuffle links to look at
 # from cob_calibration_executive.torso_ik import TorsoIK
@@ -80,6 +83,26 @@ import pdb # debugger
 #board       = Checkerboard(self.pattern_size, self.square_size)
 #checkerboard_detector=CheckerboardDetector()
 #latest_image=Image()
+
+def visualize_markers(x,y,z,frame,id,color,scale):
+    marker = Marker()
+    marker.header.frame_id = frame
+    marker.id = id
+    marker.type = marker.SPHERE
+    marker.action = marker.ADD
+    marker.scale.x = scale
+    marker.scale.y = scale
+    marker.scale.z = scale
+    marker.color.a = 1.0
+    marker.color.r = color[0]
+    marker.color.g = color[1]
+    marker.color.b = color[2]
+    marker.pose.orientation.w = 1.0
+    marker.pose.position.x = x
+    marker.pose.position.y = y
+    marker.pose.position.z = z
+    return marker
+
 
 def get_cb_pose_center(listener, base_frame):
     return listener.lookupTransform(base_frame, '/chessboard_center', rospy.Time(0))
@@ -107,6 +130,23 @@ def generate_calibration_trajectory(moveGroup,limits,discritization,orientation_
     @param cb_publisher: Chess board publisher
     '''
     listener = tf.TransformListener()
+    m_topic_limits = 'marker_array_limits'
+    m_topic_positions = 'marker_array_cb_positions'
+    marker_publisher_limits = rospy.Publisher(m_topic_limits, MarkerArray)
+    marker_publisher_positions = rospy.Publisher(m_topic_positions, MarkerArray)
+    marker_array_limits = MarkerArray()
+    marker_array_positions = MarkerArray()
+    id = 0
+    for i in range(2):
+        for j in range(2):
+            for k in range(2):
+                id += 1
+                marker = visualize_markers(limits[i][0], limits[j][1], limits[k][2], reference_frame, id, [1.0, 1.0, 0.0], 0.03)
+                marker_array_limits.markers.append(marker)
+    #marker1 = visualize_limits(limits[0][0], limits[0][1], limits[0][2], reference_frame, 1)
+    #marker2 = visualize_limits(limits[1][0], limits[1][1], limits[1][2], reference_frame, 2)
+    #marker_array.markers.append(marker1)
+    #marker_array.markers.append(marker2)
     
     next_pose = geometry_msgs.msg.PoseStamped()  #init of the geometry_msgs pose
     current_joint_angles = moveGroup.get_current_joint_values()
@@ -144,7 +184,8 @@ def generate_calibration_trajectory(moveGroup,limits,discritization,orientation_
     cb_links = ["/chessboard_center","/chessboard_lu_corner",
                 "/chessboard_ru_corner", "/chessboard_ll_corner",
                 "/chessboard_rl_corner"]
-
+    generated_positions = []
+    marker_id = 0
     for x in sample_positions['x']:
         for y in sample_positions['y']:
             for z in sample_positions['z']:
@@ -169,31 +210,12 @@ def generate_calibration_trajectory(moveGroup,limits,discritization,orientation_
 
                     cb_publisher.publish(next_pose)  # is this publish still needed ??
                     rospy.sleep(0.2)
-                    #transformation_base_cb = get_position(listener, '/chessboard_center')
-#                     [x1, y1, z1] = transformation_base_cb[0]
-#                     (dx, dy, dz) = (x1 - xhead, y1 - yhead, z1 - zhead)
-#                     roll = 0
-#                     pitch = math.atan2(dz, -dx)
-#                     yaw = -math.atan2(dy, -dx)
-#                     '''
-#                     Add noise to roll pitch and yaw values of cb
-#                     '''
-#                     std_dev = 0.3
-#                     roll = np.random.normal(roll,std_dev,1)[0]
-#                     pitch = np.random.normal(pitch,std_dev,1)[0]
-#                     yaw = np.random.normal(yaw,std_dev,1)[0]
-
-#                     q = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
-                    #print q
-#                     next_pose.pose.orientation.x = q[0]
-#                     next_pose.pose.orientation.y = q[1]
-#                     next_pose.pose.orientation.z = q[2]
-#                     next_pose.pose.orientation.w = q[3]
                     next_pose.pose.orientation.x = orientation_mean[0]
                     next_pose.pose.orientation.y = orientation_mean[1]
                     next_pose.pose.orientation.z = orientation_mean[2]
                     next_pose.pose.orientation.w = orientation_mean[3]
                     cb_publisher.publish(next_pose)
+                    marker_publisher_limits.publish(marker_array_limits)
                     rospy.sleep(0.2)
                     #transformation_base_cb = get_position(listener, cb_link)
                 #Set starting pose for trajectory to continue planning from the last achieved point 
@@ -211,9 +233,14 @@ def generate_calibration_trajectory(moveGroup,limits,discritization,orientation_
                     group_joint_trajectory.append(group_path_planned)
                     current_joint_angles = group_path_planned.joint_trajectory.points[-1].positions #update the robots joint angles for next planning iteration
                     group_joint_states.append({'joint_position': group_path_planned.joint_trajectory.points[-1].positions}) # append the attainable pose\s joint angles to the list then YAML 
+                    marker = visualize_markers(x, y, z, reference_frame, marker_id, [0.0, 0.0, 1.0], 0.05)
+                    generated_positions.append([x, y, z])
+                    marker_id += 1
+                    marker_array_positions.markers.append(marker)
+                    marker_publisher_positions.publish(marker_array_positions)
                 else:
                     print "\033[1;31mNo solution was found\033[1;m"
-    return [group_joint_trajectory, group_joint_states]
+    return [group_joint_trajectory, group_joint_states, generated_positions]
     
 def main():
     rospy.init_node(NODE)
@@ -258,174 +285,11 @@ def main():
     #print xhead, yhead, zhead
 
     print "--> setup care-o-bot for capture"
-#     next_pose = geometry_msgs.msg.PoseStamped()  #init of the geometry_msgs pose
-#     current_pose_left = arm_left_group.get_current_joint_values()
-#     current_pose_right = arm_right_group.get_current_joint_values()
-#     # making a state message and filling it
-#     arm_left_state = moveit_msgs.msg.RobotState()
-#     arm_left_state.joint_state.name = arm_left_group.get_joints()
-#     arm_right_state = moveit_msgs.msg.RobotState()
-#     arm_right_state.joint_state.name = arm_right_group.get_joints()
-#     arm_left_state.joint_state.position = current_pose_left
-#     arm_right_state.joint_state.position = current_pose_right
-#     # Debugging
-# #     ref_frame_left = arm_right_group.get_pose_reference_frame()
-# #     ref_frame_right = arm_left_group.get_pose_reference_frame()
-# #     pdb.set_trace()
-#      
-# #     torso = TorsoIK()
-#  
-#     # define cuboid for positions
-#     # limits from base_link frame Old values
-# #     limits = {'x': (-0.4, -1.0),
-# #               'y': (-0.3, 0.3),
-# #               'z': (0.5, 1.5)}
-#     #New values
-#     limits = {'x': (0.57567, 0.34636),
-#               'y': (-0.021282,  0.542),
-#               'z': (0.62907-0.485,  1.1114-0.485)}
-#  
-#     sample_density = {'x': 6,
-#                       'y': 6,
-#                       'z': 6}#originally 6
-#  
-#     sample_positions = {'x': [],
-#                         'y': [],
-#                         'z': []}
-#     for key in limits.keys():
-#         limits[key] = sorted(limits[key])
-#         sample_positions[key].append(limits[key][0])
-#         diff = limits[key][1] - limits[key][0]
-#         step = 1.0 * diff / (sample_density[key] - 1)
-#      #   print key, ' ',diff,' ',step
-#  
-#         while sample_positions[key][-1] + step <= (limits[key][1] + 0.01):
-#             sample_positions[key].append(sample_positions[key][-1] + step)
-#  
-#     joint_states_left = []
-#     joint_states_right= []
-#     joint_trajectory_left = []
-#     joint_trajectory_right = []
-# #     torso.get_torso_limits() #limits should have alerady been loaded in the launch files
-#  
-#     cb_links = ["/chessboard_center","/chessboard_lu_corner",
-#                 "/chessboard_ru_corner", "/chessboard_ll_corner",
-#                 "/chessboard_rl_corner"]
-#  
-#     for x in sample_positions['x']:
-#         for y in sample_positions['y']:
-#             for z in sample_positions['z']:
-#                 #for q in quaternion:
-#                 for cb_link in cb_links:
-#                     print "\033[1;34mNew Position\033[1;m"
-#                     next_pose.header.frame_id = '/torso_3_link' ## BASE LINK ??
-#                     next_pose.pose.position.x = x
-#                     next_pose.pose.position.y = y
-#                     next_pose.pose.position.z = z
-#  
-#                     # (0,0,0,1) for cob3-6
-#                     next_pose.pose.orientation.x = 0
-#                     next_pose.pose.orientation.y = 0
-#                     next_pose.pose.orientation.z = 0
-#                     next_pose.pose.orientation.w = 1
-#  
-#                     chessboard_pose.publish(next_pose)  # is this publish still needed ??
-#                     rospy.sleep(0.2)
-#                     transformation_base_cb = get_position(
-#                         listener, '/chessboard_center')
-#                     [x1, y1, z1] = transformation_base_cb[0]
-#                     (dx, dy, dz) = (x1 - xhead, y1 - yhead, z1 - zhead)
-#                     roll = 0
-#                     pitch = math.atan2(dz, -dx)
-#                     yaw = -math.atan2(dy, -dx)
-#                     '''
-#                     Add noise to roll pitch and yaw values of cb
-#                     '''
-#                     std_dev = 0.3
-#                     roll = np.random.normal(roll,std_dev,1)[0]
-#                     pitch = np.random.normal(pitch,std_dev,1)[0]
-#                     yaw = np.random.normal(yaw,std_dev,1)[0]
-#  
-# #                     q = tf.transformations.quaternion_from_euler(roll, pitch, yaw)
-#                     #print q
-# #                     next_pose.pose.orientation.x = q[0]
-# #                     next_pose.pose.orientation.y = q[1]
-# #                     next_pose.pose.orientation.z = q[2]
-# #                     next_pose.pose.orientation.w = q[3]
-#                     q = [0.0049228, 0.01897, -0.70297, 0.71095]
-#                     next_pose.pose.orientation.x = q[0]
-#                     next_pose.pose.orientation.y = q[1]
-#                     next_pose.pose.orientation.z = q[2]
-#                     next_pose.pose.orientation.w = q[3]
-#                     chessboard_pose.publish(next_pose)
-#                     rospy.sleep(0.2)
-#                     transformation_base_cb = get_position(
-#                         listener, cb_link)
-#                 #Set starting pose for trajectory to continue planning from the last achieved point 
-# #                 arm_left_group.set_start_state(current_pose_left) # not compatible since the pose is not a state check arm_left_state and right
-# #                 arm_right_group.set_start_state(current_pose_right)
-# #                 pdb.set_trace()
-#                 arm_left_state.joint_state.position = current_pose_left
-#                 arm_right_state.joint_state.position = current_pose_right
-#                 arm_left_group.set_start_state(arm_left_state)
-#                 arm_right_group.set_start_state(arm_right_state)
-#                 #Set end pose for trajectory
-#                 arm_left_group.set_pose_target(next_pose.pose)
-#                 arm_right_group.set_pose_target(next_pose.pose)
-#                 #Plant paths for groups
-#                 path_left = arm_left_group.plan()
-#                 path_right = arm_right_group.plan()
-#                 if path_left.joint_trajectory.header.frame_id: # check if planning succeeded
-#                     print "\033[1;32mA solution for left has been found\033[1;m"
-#                     #update next iterations starting pose
-# #                     pdb.set_trace()
-#                     arm_left_group.go()
-#                     joint_trajectory_left.append(path_left)
-#                     current_pose_left = path_left.joint_trajectory.points[-1].positions
-# #                     joint_states_left.append(str('\njoint_position: \n'))
-#                     joint_states_left.append({'joint_position': path_left.joint_trajectory.points[-1].positions}) # append the attainable pose to the list then YAML 
-#                 else:
-#                     print "\033[1;31mNo solutuin for left was found\033[1;m"
-#                 if path_right.joint_trajectory.header.frame_id:# check if planning succeeded
-#                     print "\033[1;32mA solution for right has been found\033[1;m"
-# #                     pdb.set_trace()
-#                     arm_right_group.go()
-#                     joint_trajectory_right.append(path_right)
-#                     current_pose_right = path_right.joint_trajectory.points[-1].positions
-# #                     joint_states_right.append('\njoint_position: \n')
-#                     joint_states_right.append({'joint_position': path_right.joint_trajectory.points[-1].positions}) # append the attainable pose to the list then YAML 
-#                 else:
-#                     print "\033[1;31mNo solutuin for right was found\033[1;m"
-#  
-#     file_path = rospy.get_param('~output_path', None)
-#     directory = os.path.dirname(file_path)
-#  
-#     if file_path is not None:
-#         if not os.path.exists(directory):
-#             os.makedirs(directory)
-#         file_path_joint_angles_left = file_path+"calibration_positions_left.yaml"
-#         file_path_joint_angles_right = file_path+"calibration_positions_right.yaml"
-#         with open(file_path_joint_angles_left, 'w') as f:
-#             f.write('# autogenerated: Do not edit #\n')
-#             f.write(yaml.dump(joint_states_left))
-#         with open(file_path_joint_angles_right, 'w') as f:
-#             f.write('# autogenerated: Do not edit #\n')
-#             f.write(yaml.dump(joint_states_right))
-#         file_path_joint_trajectory_left = file_path+"calibration_trajectory_left.yaml"
-#         file_path_joint_trajectory_right = file_path+"calibration_trajectory_right.yaml"
-#         with open(file_path_joint_trajectory_left, 'w') as f:
-#             f.write('# autogenerated: Do not edit #\n')
-#             f.write(yaml.dump(joint_trajectory_left))
-#         with open(file_path_joint_trajectory_right, 'w') as f:
-#             f.write('# autogenerated: Do not edit #\n')
-#             f.write(yaml.dump(joint_trajectory_right))
-#          
-# #     else:
-# #         print yaml.dump(joint_states)
+
     arm_list = [arm_left_group,arm_right_group]
-    arm_palnning_refrence_frames = ['torso_3_link','torso_3_link']
-    orientation_mean = [[0.67532, 0.73737, -0.0067638, 0.013437],
-                        [0.70711, 0.70711, 0, 0]]
+    arm_planning_reference_frames = ['torso_cam3d_left_link','torso_cam3d_right_link']
+    orientation_mean = [[-0.55194, -0.83389, 0, 0],
+                        [0, 0, 0, 0]]
 #     limits = [
 #               [[0.70668,    0.10496,    0.78983],
 #                [0.33757,    0.1748,     1.1342]],
@@ -433,14 +297,14 @@ def main():
 #                [0.6,       -0.542,      1.1114-0.485]]
 #               ]
     limits = [
-              [[0.30793, 0.60532, 0.53629-0.457/2.0],
-               [0.65456, 0.16145, 1.1518-0.457/2.0]],
-              [[0.30793, -0.60532, 0.53629-0.457/2.0],
-               [0.65456, -0.16145, 1.1518-0.457/2.0]]
-              ]
+              [[0.15074, 0.40, 0.52078-0.698747/2],  #-0.457/2.0
+               [0.6808, -0.40, 1.135-0.698747/2]],
+              [[0.15074, 0.40, 0.52078-0.698747/2],  #-0.457/2.0
+               [0.6808, -0.40, 1.135-0.698747/2]]
+              ] 
     
-    discritization = [[6,6,6],
-                      [6,6,6]]
+    discritization = [[4,4,4],
+                      [4,4,4]]
     Trajectory_Joint_angles = [] # the first element of each entry is the Trajectory list for all successful calibration points while the second is the list of finla joint angles corresponding to that list
     
     file_path = rospy.get_param('~output_path', None)
@@ -455,12 +319,12 @@ def main():
                                                     limits[i],
                                                     discritization[i],
                                                     orientation_mean[i],
-                                                    arm_palnning_refrence_frames[i],
+                                                    arm_planning_reference_frames[i],
                                                     False,
                                                     chessboard_pose))
    
-        file_path_group_angels = file_path+arm_list[i].get_name()+"calibration_positions.yaml"
-        with open(file_path_group_angels, 'w') as f:
+        file_path_group_angles = file_path+arm_list[i].get_name()+"calibration_positions.yaml"
+        with open(file_path_group_angles, 'w') as f:
             f.write('# autogenerated: Do not edit #\n')
             f.write(yaml.dump(Trajectory_Joint_angles[i][1]))# this is the second entry of the element in the list corresponding to the joint angles for all successful calibration points
         file_path_group_trajectories = file_path+arm_list[i].get_name()+"calibration_trajectories.yaml"
@@ -470,6 +334,11 @@ def main():
             display_string  = '%s ik solutions found for '% len(Trajectory_Joint_angles[i][0])
             display_string = display_string + arm_list[i].get_name()
             print (display_string)
+        file_path_cb_positions = file_path+arm_list[i].get_name()+"_cb_positions.yaml"
+        with open(file_path_cb_positions, 'w') as f:
+            f.write('# autogenerated: Do not edit #\n')
+            Trajectory_Joint_angles[i][2].append(arm_planning_reference_frames[i])
+            f.write(yaml.dump(Trajectory_Joint_angles[i][2]))
 
 
 def calculate_angles(t):

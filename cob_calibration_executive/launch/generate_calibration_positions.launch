@@ -5,7 +5,7 @@
     <arg name="robot" default="$(env ROBOT)"/>
     <arg name="with_db" default="false"/>
     <arg name="debug" default="false"/>
-    <arg name="rviz_sim_flag" default="false"/>
+    <arg name="rviz_sim_flag" default="true"/>
     
     <!-- Load universal robotic description format (URDF) -->
     <arg name="config_path" default="$(find cob_moveit_config)/$(arg robot)/config"/> <!-- Define path from wich to read-->
