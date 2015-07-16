@@ -256,10 +256,6 @@ def main():
     print "============"
     listener = tf.TransformListener()
     rospy.sleep(1.5)
-    arm_left_group = moveit_commander.MoveGroupCommander("arm_left") # define groups
-    arm_right_group = moveit_commander.MoveGroupCommander("arm_right")
-    arm_left_group.set_pose_reference_frame('torso_3_link')#***
-    arm_right_group.set_pose_reference_frame('torso_3_link')#***
 #     torso_ik = rospy.ServiceProxy('/lookat_get_ik', GetPositionIK) # no Torso link
     # init
     print "--> initializing sss"
@@ -285,26 +281,63 @@ def main():
     #print xhead, yhead, zhead
 
     print "--> setup care-o-bot for capture"
-
-    arm_list = [arm_left_group,arm_right_group]
-    arm_planning_reference_frames = ['torso_cam3d_left_link','torso_cam3d_right_link']
-    orientation_mean = [[-0.55194, -0.83389, 0, 0],
-                        [0, 0, 0, 0]]
-#     limits = [
-#               [[0.70668,    0.10496,    0.78983],
-#                [0.33757,    0.1748,     1.1342]],
-#               [[0.35,      -0.021282,   0.62907-0.485],
-#                [0.6,       -0.542,      1.1114-0.485]]
-#               ]
-    limits = [
-              [[0.15074, 0.40, 0.52078-0.698747/2],  #-0.457/2.0
-               [0.6808, -0.40, 1.135-0.698747/2]],
-              [[0.15074, 0.40, 0.52078-0.698747/2],  #-0.457/2.0
-               [0.6808, -0.40, 1.135-0.698747/2]]
-              ] 
     
-    discritization = [[4,4,4],
-                      [4,4,4]]
+#     arm_left_group = moveit_commander.MoveGroupCommander("arm_left") # define groups
+#     arm_right_group = moveit_commander.MoveGroupCommander("arm_right")
+#     arm_left_group.set_pose_reference_frame('torso_3_link')#***
+#     arm_right_group.set_pose_reference_frame('torso_3_link')#***
+#     arm_list = [arm_left_group,arm_right_group]
+    
+#     arm_planning_reference_frames = ['torso_cam3d_left_link','torso_cam3d_right_link']
+#     orientation_mean = [[-0.55194, -0.83389, 0, 0],
+#                         [0.83389, 0.55194, 0, 0]]
+#     limits = [
+#               [[0.15074, 0.40, 0.52078-0.698747/2],  #-0.457/2.0
+#                [0.6808, -0.40, 1.135-0.698747/2]],
+#               [[0.15074, 0.40, 0.52078-0.698747/2],  #-0.457/2.0
+#                [0.6808, -0.40, 1.135-0.698747/2]]
+#               ] 
+#     discritization = [[2,2,2],
+#                       [2,2,2]]
+    
+    
+    try:
+        arms = rospy.get_param('/cob_calibration_executive/arms')
+    except:
+        raise NameError('Couldn\'t find the configuration parameters under \'~cob_calibration/arms\' namespace.')
+    
+    config_list = []
+    for k in arms.keys():
+            config_list.append(arms[k])
+            
+    arm_names = []
+    limits = []
+    discritization = []
+    orientation_mean = []
+    arm_planning_reference_frames = []
+    for i, arm in enumerate(config_list):
+        arm_names.append(arm['name'])
+        
+        l1 = arm['limits_corner_1']
+        l2 = arm['limits_corner_2']
+        l1 = [float(eval(str(i))) for i in l1]   # convert the limit values into float 
+        l2 = [float(eval(str(i))) for i in l2]
+        limits.append([l1, l2])
+        
+        d = map(int, arm['discritization'])
+        discritization.append(d)
+        
+        h = arm['hand_orientation']
+        h = [float(eval(str(i))) for i in h]   # convert the orientation values into float 
+        orientation_mean.append(h)
+        
+        arm_planning_reference_frames.append(str(arm['arm_planning_reference_frame']))
+        
+    arm_list = []
+    for i, arm in enumerate(arm_names):
+        arm_list.append(moveit_commander.MoveGroupCommander(arm))
+        arm_list[i].set_pose_reference_frame('torso_3_link')
+    
     Trajectory_Joint_angles = [] # the first element of each entry is the Trajectory list for all successful calibration points while the second is the list of finla joint angles corresponding to that list
     
     file_path = rospy.get_param('~output_path', None)

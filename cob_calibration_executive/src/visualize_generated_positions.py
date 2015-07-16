@@ -118,15 +118,14 @@ def main():
             cb_positions = yaml.load(f)
     
         reference_frame = cb_positions[-1]
-        print '##########################3'
-        print str(reference_frame)
         for i in range(0, len(cb_positions)-1):
             marker = visualize_markers(cb_positions[i][0], cb_positions[i][1], cb_positions[i][2], reference_frame, marker_id, [j, 0.5, 1.0], 0.05)
             marker_id += 1
             marker_array_positions.markers.append(marker)
-    while True:
+    print 'Launch rviz now if it\'s not already open. In rviz add MarkerArray display and as a marker topic choose: %s' %(m_topic_positions)
+    while not rospy.is_shutdown():
         marker_publisher_positions.publish(marker_array_positions)
-    rospy.spin()
+        rospy.sleep(0.1)
     
 if __name__ == '__main__':
     main()
