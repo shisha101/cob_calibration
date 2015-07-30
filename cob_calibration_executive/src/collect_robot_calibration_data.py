@@ -17,13 +17,15 @@
 #   ROS package name: cob_calibration_executive
 #
 # \author
-#   Author: Jannik Abbenseth, email:jannik.abbenseth@gmail.com
-# \author
-#   Author: Sebastian Haug, email:sebhaug@gmail.com
+#   Author: Shehab El Din, email:###
 # \author
 #   Supervised by: Florian Weisshardt, email:florian.weisshardt@ipa.fhg.de
+# \author
+#   Author: Topias Liikanen, email:liikanen.topias@gmail.com
+# \author
+#   Supervised by: Nadia Hammoudeh Garcia, email:Nadia.HammoudehGarcia@ipa.fhg.de
 #
-# \date Date of creation: January 2012
+# \date Date of creation: July 2015
 #
 #################################################################
 #
